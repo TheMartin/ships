@@ -1,4 +1,6 @@
-import { System, RenderSystem, EntityCollection } from "../ecs/ecs";
+import { EntityCollection } from "../ecs/entities";
+import { System } from "../ecs/system";
+import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
