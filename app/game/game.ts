@@ -1,9 +1,17 @@
 import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
-import { Box, InterpolatedBox, BoxUpdater, BoxRenderer } from "../systems/box";
+
+import { Cached } from "../systems/cached";
+import { Position } from "../systems/position";
+import { CachePosition } from "../systems/cachePosition";
+import { SineMovement } from "../systems/sineMovement";
+import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
+
 import { Renderer } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
+
+import { Static } from "../data/static";
 
 export class Game
 {
@@ -11,12 +19,13 @@ export class Game
   {
     this.updateSystems =
     [
-      new BoxUpdater()
+      new CachePosition(),
+      new SineMovement()
     ];
 
     this.renderSystems =
     [
-      new BoxRenderer(renderer)
+      new ShapeRenderer(renderer)
     ];
   }
 
@@ -46,14 +55,16 @@ export class Game
 
     this.entityCollection.addEntity(
       new Entity()
-        .addComponent(Box.t,
-          new Box(
-            new Vec2(50, 50),
-            new Vec2(10, 10)
+        .addComponent(Position.t,
+          new Position(
+            new Vec2(50, 50)
           )
         )
-        .addComponent(InterpolatedBox.t,
-          new InterpolatedBox()
+        .addComponent(RenderShape.t,
+          new RenderShape(Static.Box)
+        )
+        .addComponent(Cached.t + Position.t,
+          new Cached<Position>()
         )
       );
 
