@@ -2,6 +2,7 @@ import { EntityCollection } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
+import { Shape } from "../renderer/shape";
 import { Vec2, lerp } from "../vec2/vec2";
 
 export class Box
@@ -19,6 +20,13 @@ export class InterpolatedBox
 export class BoxRenderer implements RenderSystem
 {
   constructor(private renderer : Renderer) {}
+
+  static box : Shape = new Shape(
+    "black", 3,
+    "gray",
+    [ new Vec2(-10, -10), new Vec2(-10, 10), new Vec2(10, 10), new Vec2(10, -10) ]
+    );
+
   update(dt : number, interp : number, entities : EntityCollection) : void
   {
     for (let id in entities)
@@ -31,11 +39,11 @@ export class BoxRenderer implements RenderSystem
       let interpBox = e.components[InterpolatedBox.t] as InterpolatedBox;
       if (interpBox && interpBox.prev)
       {
-        this.renderer.drawBox( lerp(interpBox.prev.pos, box.pos, interp), lerp(interpBox.prev.size, box.size, interp) );
+        this.renderer.drawShape(BoxRenderer.box, lerp(interpBox.prev.pos, box.pos, interp), 0, 2);
       }
       else
       {
-        this.renderer.drawBox(box.pos, box.size);
+        this.renderer.drawShape(BoxRenderer.box, box.pos, 0, 1);
       }
     }
   }

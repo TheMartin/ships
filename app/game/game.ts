@@ -20,7 +20,7 @@ export class Game
     ];
   }
 
-  start(fps : number)
+  start(fps : number) : void
   {
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -61,7 +61,7 @@ export class Game
     requestAnimationFrame(drawFn);
   }
 
-  update(dt : number)
+  update(dt : number) : void
   {
     for (let system of this.updateSystems)
     {
@@ -69,10 +69,10 @@ export class Game
     }
   }
 
-  draw(dt : number, interp : number)
+  draw(dt : number, interp : number) : void
   {
     this.renderer.clear();
-    
+
     for (let system of this.renderSystems)
     {
       system.update(dt, interp, this.entityCollection.entities);
