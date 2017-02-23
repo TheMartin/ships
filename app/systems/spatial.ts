@@ -5,3 +5,9 @@ export class Position
   constructor(public pos : Vec2) {}
   static readonly t : string = "Position";
 };
+
+export class Rotation
+{
+  constructor(public angle : number) {}
+  static readonly t : string = "Rotation";
+};

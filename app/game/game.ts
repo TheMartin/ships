@@ -3,8 +3,8 @@ import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 
 import { Cached } from "../systems/cached";
-import { Position } from "../systems/position";
-import { CachePosition } from "../systems/cachePosition";
+import { Position, Rotation } from "../systems/spatial";
+import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
 import { SineMovement } from "../systems/sineMovement";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 
@@ -20,7 +20,8 @@ export class Game
     this.updateSystems =
     [
       new CachePosition(),
-      new SineMovement()
+      new CacheRotation(),
+      new SineMovement(50, 550, 100)
     ];
 
     this.renderSystems =
@@ -60,11 +61,17 @@ export class Game
             new Vec2(50, 50)
           )
         )
+        .addComponent(Rotation.t,
+          new Rotation(0)
+        )
         .addComponent(RenderShape.t,
-          new RenderShape(Static.Box)
+          new RenderShape(Static.Ship)
         )
         .addComponent(Cached.t + Position.t,
           new Cached<Position>()
+        )
+        .addComponent(Cached.t + Rotation.t,
+          new Cached<Rotation>()
         )
       );
 

@@ -1,10 +1,14 @@
 import { EntityCollection } from "../ecs/entities";
 import { System } from "../ecs/system";
-import { Position } from "../systems/position";
+import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
 
 export class SineMovement implements System
 {
+  constructor(private xMin : number, private xMax : number, private y0 : number)
+  {
+  }
+
   update(dt : number, entities : EntityCollection) : void
   {
     for (let id in entities)
@@ -15,12 +19,24 @@ export class SineMovement implements System
         continue;
 
       let pos = position.pos;
-      pos.x += 50 * dt;
-      pos.y = 50 + 50 * Math.cos((pos.x - 50) / 50);
-      while (pos.x > 550)
+      pos.x += this.xSpeed * dt;
+      pos.y = this.y0 + this.amplitude * (0.5 * Math.cos(2 * Math.PI * (pos.x - this.xMin) / this.wavelength) + 0.5);
+      while (pos.x > this.xMax)
       {
-        pos.x -= 500;
+        pos.x -= (this.xMax - this.xMin);
+      }
+
+      let rotation = e.components[Rotation.t] as Rotation;
+      if (rotation)
+      {
+        rotation.angle += this.rotationSpeed * dt;
       }
     }
   }
+
+  private xSpeed : number = 50;
+  private ySpeed : number = 50;
+  private wavelength : number = 250;
+  private amplitude : number = 100;
+  private rotationSpeed : number = Math.PI;
 };

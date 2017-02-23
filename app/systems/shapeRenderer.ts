@@ -3,7 +3,7 @@ import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";
-import { Position } from "../systems/position";
+import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
 import { Vec2, lerp } from "../vec2/vec2";
 
@@ -27,15 +27,21 @@ export class ShapeRenderer implements RenderSystem
       if (!shape || !position)
         continue;
 
+      let pos = position.pos;
       let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
       if (cachedPos && cachedPos.value)
-      {
-        this.renderer.drawShape(shape.shape, lerp(cachedPos.value.pos, position.pos, interp), 0, 2);
-      }
-      else
-      {
-        this.renderer.drawShape(shape.shape, position.pos, 0, 2);
-      }
+        pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
+
+      let angle = 0;
+      let rotation = e.components[Rotation.t] as Rotation;
+      if (rotation)
+        angle = rotation.angle;
+
+      let cachedRot = e.components[Cached.t + Rotation.t] as Cached<Rotation>;
+      if (cachedRot && cachedRot.value)
+        angle = lerp(cachedRot.value.angle, angle, interp);
+
+      this.renderer.drawShape(shape.shape, pos, angle, 1);
     }
   }
 };

@@ -58,6 +58,11 @@ export class Vec2
   {
     return this.clone().normalize();
   }
+
+  static lerp(v1 : Vec2, v2 : Vec2, alpha : number) : Vec2
+  {
+    return v1.clone().multiply(1 - alpha).add(v2.clone().multiply(alpha));
+  }
 };
 
 export function dot(v1 : Vec2, v2 : Vec2) : number
@@ -75,7 +80,7 @@ export function norm(v : Vec2) : number
   return Math.sqrt(norm2(v));
 };
 
-export function lerp(v1 : Vec2, v2 : Vec2, alpha : number) : Vec2
+export function lerp(x1 : number, x2 : number, alpha : number) : number
 {
-  return v1.clone().multiply(1 - alpha).add(v2.clone().multiply(alpha));
-}
+  return (1 - alpha) * x1 + alpha * x2;
+};

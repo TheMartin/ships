@@ -6,6 +6,8 @@ export class Renderer
   constructor(private canvas : HTMLCanvasElement)
   {
     this.ctx = this.canvas.getContext("2d");
+    this.ctx.lineJoin = "round";
+    this.ctx.lineCap = "round";
   }
 
   drawShape(shape : Shape, pos : Vec2, rot : number, scale : number)
@@ -29,8 +31,8 @@ export class Renderer
     }
     this.ctx.closePath();
 
-    this.ctx.stroke();
     this.ctx.fill();
+    this.ctx.stroke();
   }
 
   clear()
