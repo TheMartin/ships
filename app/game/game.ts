@@ -5,7 +5,8 @@ import { RenderSystem } from "../ecs/renderSystem";
 import { Cached } from "../systems/cached";
 import { Position, Rotation } from "../systems/spatial";
 import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
-import { SineMovement } from "../systems/sineMovement";
+import { MoveTo, MoveToTarget } from "../systems/moveTo";
+import { ChooseRandomTarget } from "../systems/randomTarget";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 
 import { Renderer } from "../renderer/renderer";
@@ -21,7 +22,8 @@ export class Game
     [
       new CachePosition(),
       new CacheRotation(),
-      new SineMovement(50, 550, 100)
+      new MoveTo(50),
+      new ChooseRandomTarget(new Vec2(50, 50), new Vec2(650, 650))
     ];
 
     this.renderSystems =
@@ -72,6 +74,9 @@ export class Game
         )
         .addComponent(Cached.t + Rotation.t,
           new Cached<Rotation>()
+        )
+        .addComponent(MoveToTarget.t,
+          new MoveToTarget()
         )
       );
 

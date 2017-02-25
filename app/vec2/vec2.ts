@@ -59,6 +59,11 @@ export class Vec2
     return this.clone().normalize();
   }
 
+  angle() : number
+  {
+    return Math.atan2(this.x, -this.y);
+  }
+
   static lerp(v1 : Vec2, v2 : Vec2, alpha : number) : Vec2
   {
     return v1.clone().multiply(1 - alpha).add(v2.clone().multiply(alpha));
