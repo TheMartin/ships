@@ -59,32 +59,12 @@ export class Game
       requestAnimationFrame(drawFn);
     };
 
-    this.entityCollection.addEntity(
-      new Entity()
-        .addComponent(Position.t,
-          new Position(
-            new Vec2(50, 50)
-          )
-        )
-        .addComponent(Rotation.t,
-          new Rotation(0)
-        )
-        .addComponent(RenderShape.t,
-          new RenderShape(Static.Ship)
-        )
-        .addComponent(Cached.t + Position.t,
-          new Cached<Position>()
-        )
-        .addComponent(Cached.t + Rotation.t,
-          new Cached<Rotation>()
-        )
-        .addComponent(MoveToTarget.t,
-          new MoveToTarget()
-        )
-        .addComponent(Selectable.t,
-          new Selectable()
-        )
-      );
+    const corner = new Vec2(50, 50);
+    const dimensions = new Vec2(600, 600);
+    for (let i = 0; i < 5; ++i)
+    {
+      this.entityCollection.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0) );
+    }
 
     setTimeout(updateFn, 1000 / this.fps);
     requestAnimationFrame(drawFn);

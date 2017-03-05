@@ -68,6 +68,11 @@ export class Vec2
   {
     return v1.clone().multiply(1 - alpha).add(v2.clone().multiply(alpha));
   }
+
+  static random() : Vec2
+  {
+    return new Vec2(Math.random(), Math.random());
+  }
 };
 
 export function dot(v1 : Vec2, v2 : Vec2) : number
