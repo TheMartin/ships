@@ -35,6 +35,30 @@ export class Renderer
     this.ctx.stroke();
   }
 
+  drawRect(a : Vec2, b : Vec2, color : string, stroke? : string, lineWidth? : number)
+  {
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.fillStyle = color;
+    if (stroke)
+    {
+      this.ctx.strokeStyle = stroke;
+      if (lineWidth)
+      {
+        this.ctx.lineWidth = lineWidth;
+      }
+    }
+
+    const x = Math.min(a.x, b.x);
+    const y = Math.min(a.y, b.y);
+    const w = Math.abs(b.x - a.x);
+    const h = Math.abs(b.y - a.y);
+    this.ctx.fillRect(x, y, w, h);
+    if (stroke)
+    {
+      this.ctx.strokeRect(x, y, w, h);
+    }
+  }
+
   clear()
   {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);

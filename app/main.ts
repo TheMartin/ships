@@ -1,5 +1,6 @@
 import { Game } from "./game/game";
 import { Renderer } from "./renderer/renderer";
+import { UiManager } from "./ui/uiManager";
 
 let content = document.getElementById("content");
 let canvas = document.createElement("canvas");
@@ -12,5 +13,6 @@ resize();
 window.addEventListener("resize", resize);
 content.appendChild(canvas);
 let renderer = new Renderer(canvas);
-let game = new Game(renderer);
+let ui = new UiManager(content, canvas);
+let game = new Game(ui, renderer);
 game.start(60);

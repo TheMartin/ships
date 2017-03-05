@@ -7,8 +7,10 @@ import { Position, Rotation } from "../systems/spatial";
 import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
 import { MoveTo, MoveToTarget } from "../systems/moveTo";
 import { ChooseRandomTarget } from "../systems/randomTarget";
+import { Selectable, SelectionSystem } from "../systems/selection";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 
+import { UiManager } from "../ui/uiManager";
 import { Renderer } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
@@ -16,7 +18,7 @@ import { Static } from "../data/static";
 
 export class Game
 {
-  constructor(private renderer : Renderer)
+  constructor(private ui : UiManager, private renderer : Renderer)
   {
     this.updateSystems =
     [
@@ -28,6 +30,7 @@ export class Game
 
     this.renderSystems =
     [
+      new SelectionSystem(ui, renderer),
       new ShapeRenderer(renderer)
     ];
   }
@@ -77,6 +80,9 @@ export class Game
         )
         .addComponent(MoveToTarget.t,
           new MoveToTarget()
+        )
+        .addComponent(Selectable.t,
+          new Selectable()
         )
       );
 
