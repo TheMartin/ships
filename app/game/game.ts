@@ -7,6 +7,7 @@ import { Position, Rotation } from "../systems/spatial";
 import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
 import { MoveTo, MoveToTarget } from "../systems/moveTo";
 import { ChooseRandomTarget } from "../systems/randomTarget";
+import { RenderMoveTarget } from "../systems/renderMoveTarget";
 import { Selectable, SelectionSystem } from "../systems/selection";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 
@@ -31,6 +32,7 @@ export class Game
     this.renderSystems =
     [
       new SelectionSystem(ui, renderer),
+      new RenderMoveTarget(renderer),
       new ShapeRenderer(renderer)
     ];
   }

@@ -39,6 +39,29 @@ export class Renderer
     this.render(shape.props);
   }
 
+  drawLine(a : Vec2, b : Vec2, props : RenderProps = {}, lineDash? : number[])
+  {
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.setProps(props);
+    let oldDash : number[] = [];
+    if (lineDash)
+    {
+      oldDash = this.ctx.getLineDash();
+      this.ctx.setLineDash(lineDash);
+    }
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(a.x, a.y);
+    this.ctx.lineTo(b.x, b.y);
+
+    this.render(props);
+
+    if (lineDash)
+    {
+      this.ctx.setLineDash(oldDash);
+    }
+  }
+
   drawRect(a : Vec2, b : Vec2, props : RenderProps = {})
   {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);

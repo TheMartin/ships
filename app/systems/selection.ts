@@ -15,7 +15,7 @@ export class Selectable
   static readonly t : string = "Selectable";
 };
 
-class Selected
+export class Selected
 {
   static readonly t : string = "Selected";
 };
