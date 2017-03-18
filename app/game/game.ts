@@ -8,6 +8,7 @@ import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
 import { MoveTo, MoveToTarget } from "../systems/moveTo";
 import { ChooseRandomTarget } from "../systems/randomTarget";
 import { RenderMoveTarget } from "../systems/renderMoveTarget";
+import { OrderMove } from "../systems/orderMove";
 import { Selectable, SelectionSystem } from "../systems/selection";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 
@@ -25,7 +26,8 @@ export class Game
     [
       new CachePosition(this.entityContainer),
       new CacheRotation(this.entityContainer),
-      new MoveTo(this.entityContainer, 50)
+      new MoveTo(this.entityContainer, 50),
+      new OrderMove(this.entityContainer, ui)
     ];
 
     this.renderSystems =
