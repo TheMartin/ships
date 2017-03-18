@@ -6,6 +6,8 @@ import { UiManager } from "../ui/uiManager";
 import { Cached } from "../systems/cached";
 import { Position } from "../systems/spatial";
 
+import { RenderProps } from "../renderer/renderer";
+
 import { Vec2, lerp } from "../vec2/vec2";
 
 export class Selectable
@@ -157,16 +159,23 @@ export class SelectionSystem implements RenderSystem
       }
 
       const size = new Vec2(10, 10);
-      this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), "rgba(0, 0, 0, 0)", "rgb(0, 255, 0)");
+      this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), SelectionSystem.selectedBoxProps);
     }
 
     if (this.dragStart && this.dragCurrent)
     {
-      this.renderer.drawRect(this.dragStart, this.dragCurrent, "rgba(0, 255, 0, 0.2)", "rgb(0, 255, 0)", 1);
+      this.renderer.drawRect(this.dragStart, this.dragCurrent, SelectionSystem.selectionBoxProps);
     }
   }
 
   private dragStart : Vec2;
   private dragCurrent : Vec2;
   private selection : Select | Unselect;
+  private static readonly selectedBoxProps : RenderProps = { stroke : "rgb(0, 255, 0)" };
+  private static readonly selectionBoxProps : RenderProps =
+    {
+      stroke : "rgb(0, 255, 0)",
+      lineWidth : 1,
+      fillColor : "rgba(0, 255, 0, 0.2)"
+    };
 };

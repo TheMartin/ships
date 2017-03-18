@@ -1,6 +1,13 @@
 import { Vec2 } from "../vec2/vec2";
 import { Shape } from "./shape";
 
+export interface RenderProps
+{
+  fillColor? : string;
+  stroke? : string;
+  lineWidth? : number;
+};
+
 export class Renderer
 {
   constructor(private canvas : HTMLCanvasElement)
@@ -19,9 +26,7 @@ export class Renderer
       pos.x, pos.y
       );
 
-    this.ctx.fillStyle = shape.fillColor;
-    this.ctx.strokeStyle = shape.lineColor;
-    this.ctx.lineWidth = shape.lineWidth;
+    this.setProps(shape.props);
 
     this.ctx.beginPath();
     this.ctx.moveTo(shape.vertices[0].x, shape.vertices[0].y);
@@ -31,38 +36,72 @@ export class Renderer
     }
     this.ctx.closePath();
 
-    this.ctx.fill();
-    this.ctx.stroke();
+    this.render(shape.props);
   }
 
-  drawRect(a : Vec2, b : Vec2, color : string, stroke? : string, lineWidth? : number)
+  drawRect(a : Vec2, b : Vec2, props : RenderProps = {})
   {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.fillStyle = color;
-    if (stroke)
-    {
-      this.ctx.strokeStyle = stroke;
-      if (lineWidth)
-      {
-        this.ctx.lineWidth = lineWidth;
-      }
-    }
+    this.setProps(props);
 
     const x = Math.min(a.x, b.x);
     const y = Math.min(a.y, b.y);
     const w = Math.abs(b.x - a.x);
     const h = Math.abs(b.y - a.y);
-    this.ctx.fillRect(x, y, w, h);
-    if (stroke)
+    if (props.fillColor)
+    {
+      this.ctx.fillRect(x, y, w, h);
+    }
+    if (props.stroke)
     {
       this.ctx.strokeRect(x, y, w, h);
     }
+  }
+
+  drawCircle(center : Vec2, radius : number, props : RenderProps = {})
+  {
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.setProps(props);
+
+    this.ctx.beginPath();
+    this.ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    this.ctx.closePath();
+
+    this.render(props);
   }
 
   clear()
   {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  private setProps(props : RenderProps)
+  {
+    if (props.fillColor)
+    {
+      this.ctx.fillStyle = props.fillColor;
+    }
+    if (props.stroke)
+    {
+      this.ctx.strokeStyle = props.stroke;
+      if (props.lineWidth)
+      {
+        this.ctx.lineWidth = props.lineWidth;
+      }
+    }
+  }
+
+  private render(props : RenderProps)
+  {
+    if (props.fillColor)
+    {
+      this.ctx.fill();
+    }
+    if (props.stroke)
+    {
+      this.ctx.stroke();
+    }
   }
 
   private ctx : CanvasRenderingContext2D;
