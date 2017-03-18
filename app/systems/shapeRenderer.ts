@@ -1,4 +1,4 @@
-import { EntityCollection } from "../ecs/entities";
+import { EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
@@ -15,13 +15,13 @@ export class RenderShape
 
 export class ShapeRenderer implements RenderSystem
 {
-  constructor(private renderer : Renderer) {}
+  constructor(private entities : EntityContainer, private renderer : Renderer) {}
 
-  update(dt : number, interp : number, entities : EntityCollection) : void
+  update(dt : number, interp : number) : void
   {
-    for (let id in entities)
+    for (let id in this.entities.entities)
     {
-      let e = entities[id];
+      let e = this.entities.entities[id];
       let shape = e.components[RenderShape.t] as RenderShape;
       let position = e.components[Position.t] as Position;
       if (!shape || !position)

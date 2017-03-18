@@ -23,17 +23,16 @@ export class Game
   {
     this.updateSystems =
     [
-      new CachePosition(),
-      new CacheRotation(),
-      new MoveTo(50),
-      new ChooseRandomTarget(new Vec2(50, 50), new Vec2(650, 650))
+      new CachePosition(this.entityContainer),
+      new CacheRotation(this.entityContainer),
+      new MoveTo(this.entityContainer, 50)
     ];
 
     this.renderSystems =
     [
-      new SelectionSystem(ui, renderer),
-      new RenderMoveTarget(renderer),
-      new ShapeRenderer(renderer)
+      new SelectionSystem(this.entityContainer, ui, renderer),
+      new RenderMoveTarget(this.entityContainer, renderer),
+      new ShapeRenderer(this.entityContainer, renderer)
     ];
   }
 
@@ -65,7 +64,7 @@ export class Game
     const dimensions = new Vec2(600, 600);
     for (let i = 0; i < 5; ++i)
     {
-      this.entityCollection.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0) );
+      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0) );
     }
 
     setTimeout(updateFn, 1000 / this.fps);
@@ -76,7 +75,7 @@ export class Game
   {
     for (let system of this.updateSystems)
     {
-      system.update(dt, this.entityCollection.entities);
+      system.update(dt);
     }
   }
 
@@ -86,14 +85,14 @@ export class Game
 
     for (let system of this.renderSystems)
     {
-      system.update(dt, interp, this.entityCollection.entities);
+      system.update(dt, interp);
     }
   }
 
   private lastUpdate : number = 0;
   private lastDraw : number = 0;
   private fps : number = 0;
-  private entityCollection : EntityContainer = new EntityContainer();
+  private entityContainer : EntityContainer = new EntityContainer();
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];
 };

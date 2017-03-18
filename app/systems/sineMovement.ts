@@ -1,19 +1,19 @@
-import { EntityCollection } from "../ecs/entities";
+import { EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
 
 export class SineMovement implements System
 {
-  constructor(private xMin : number, private xMax : number, private y0 : number)
+  constructor(private entities : EntityContainer, private xMin : number, private xMax : number, private y0 : number)
   {
   }
 
-  update(dt : number, entities : EntityCollection) : void
+  update(dt : number) : void
   {
-    for (let id in entities)
+    for (let id in this.entities.entities)
     {
-      let e = entities[id];
+      let e = this.entities.entities[id];
       let position = e.components[Position.t] as Position;
       if (!position)
         continue;

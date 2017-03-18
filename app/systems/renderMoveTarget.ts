@@ -1,5 +1,4 @@
-import { EntityCollection } from "../ecs/entities";
-import { System } from "../ecs/system";
+import { EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, RenderProps } from "../renderer/renderer";
 import { MoveToTarget } from "../systems/moveTo";
@@ -10,16 +9,16 @@ import { Vec2 } from "../vec2/vec2";
 
 export class RenderMoveTarget implements RenderSystem
 {
-  constructor(private renderer : Renderer) {}
+  constructor(private entities : EntityContainer, private renderer : Renderer) {}
 
-  update(dt : number, interp : number, entities : EntityCollection) : void
+  update(dt : number, interp : number) : void
   {
-    for (let id in entities)
+    for (let id in this.entities.entities)
     {
-      let e = entities[id];
+      let e = this.entities.entities[id];
       let moveTarget = e.components[MoveToTarget.t] as MoveToTarget;
       let selected = e.components[Selected.t] as Selected;
-      if (!moveTarget || !selected)
+      if (!moveTarget || !selected || !moveTarget.target)
         continue;
 
       this.renderer.drawCircle(moveTarget.target, 10, RenderMoveTarget.targetProps);

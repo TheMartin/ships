@@ -1,4 +1,4 @@
-import { EntityCollection } from "../ecs/entities";
+import { EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
@@ -6,11 +6,13 @@ import { Vec2 } from "../vec2/vec2";
 
 export class CachePosition implements System
 {
-  update(dt : number, entities : EntityCollection) : void
+  constructor(private entities : EntityContainer) {}
+
+  update(dt : number) : void
   {
-    for (let id in entities)
+    for (let id in this.entities.entities)
     {
-      let e = entities[id];
+      let e = this.entities.entities[id];
       let position = e.components[Position.t] as Position;
       let cachedPosition = e.components[Cached.t + Position.t] as Cached<Position>;
       if (!position || !cachedPosition)
@@ -23,11 +25,13 @@ export class CachePosition implements System
 
 export class CacheRotation implements System
 {
-  update(dt : number, entities : EntityCollection) : void
+  constructor(private entities : EntityContainer) {}
+
+  update(dt : number) : void
   {
-    for (let id in entities)
+    for (let id in this.entities.entities)
     {
-      let e = entities[id];
+      let e = this.entities.entities[id];
       let rotation = e.components[Rotation.t] as Rotation;
       let cachedRotation = e.components[Cached.t + Rotation.t] as Cached<Rotation>;
       if (!rotation || !cachedRotation)

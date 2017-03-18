@@ -1,4 +1,4 @@
-import { EntityCollection } from "../ecs/entities";
+import { EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
 import { UiManager } from "../ui/uiManager";
@@ -56,7 +56,7 @@ function isSelect(selection : Selection): selection is Select
 
 export class SelectionSystem implements RenderSystem
 {
-  constructor(ui : UiManager, private renderer : Renderer)
+  constructor(private entities : EntityContainer, ui : UiManager, private renderer : Renderer)
   {
     ui.addEventListener("mousedown", (e : Event) =>
     {
@@ -96,15 +96,15 @@ export class SelectionSystem implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, entities : EntityCollection) : void
+  update(dt : number, interp : number) : void
   {
     if (this.selection)
     {
       if (isSelect(this.selection))
       {
-        for (let id in entities)
+        for (let id in this.entities.entities)
         {
-          let e = entities[id];
+          let e = this.entities.entities[id];
           let position = e.components[Position.t] as Position;
           let selectable = e.components[Selectable.t] as Selectable;
           if (!position || !selectable)
@@ -130,9 +130,9 @@ export class SelectionSystem implements RenderSystem
       }
       else
       {
-        for (let id in entities)
+        for (let id in this.entities.entities)
         {
-          let e = entities[id];
+          let e = this.entities.entities[id];
           e.removeComponent(Selected.t);
         }
       }
@@ -140,9 +140,9 @@ export class SelectionSystem implements RenderSystem
       this.selection = null;
     }
 
-    for (let id in entities)
+    for (let id in this.entities.entities)
     {
-      let e = entities[id];
+      let e = this.entities.entities[id];
       let selected = e.components[Selected.t] as Selected;
       if (!selected)
         continue;
