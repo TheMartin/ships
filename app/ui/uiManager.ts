@@ -13,4 +13,14 @@ export class UiManager
   {
     this.rootElement.removeEventListener(type, listener);
   }
+
+  addElement(elem : HTMLElement) : void
+  {
+    this.rootElement.appendChild(elem);
+  }
+
+  removeElement(elem : HTMLElement) : void
+  {
+    this.rootElement.removeChild(elem);
+  }
 };

@@ -1,5 +1,4 @@
 import { EntityContainer } from "../ecs/entities";
-import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";

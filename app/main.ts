@@ -4,7 +4,7 @@ import { UiManager } from "./ui/uiManager";
 
 let content = document.getElementById("content");
 let canvas = document.createElement("canvas");
-canvas.addEventListener("contextmenu", (e : Event) => { e.preventDefault(); });
+content.addEventListener("contextmenu", (e : Event) => { e.preventDefault(); });
 let resize = () =>
 {
   canvas.width = window.innerWidth;

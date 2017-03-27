@@ -4,6 +4,7 @@ import { Position, Rotation } from "../systems/spatial";
 import { RenderShape } from "../systems/shapeRenderer";
 import { MoveToTarget } from "../systems/moveTo";
 import { Selectable } from "../systems/selection";
+import { Named } from "../systems/named";
 
 import { Shape } from "../renderer/shape";
 import { Vec2 } from "../vec2/vec2";
@@ -28,7 +29,7 @@ export class Static
     [ new Vec2(0, -15), new Vec2(-12, 15), new Vec2(0, 10.5), new Vec2(12, 15) ]
   );
 
-  static makeShip(pos : Vec2, rot : number)
+  static makeShip(pos : Vec2, rot : number, name : string)
   {
     return new Entity()
       .addComponent(Position.t,
@@ -51,6 +52,9 @@ export class Static
       )
       .addComponent(Selectable.t,
         new Selectable()
+      )
+      .addComponent(Named.t,
+        new Named(name)
       );
   };
 };

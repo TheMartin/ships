@@ -4,3 +4,46 @@ body {
   background-color: #141414;
   overflow: hidden;
 }
+
+.window {
+  position: absolute;
+  display: inline-block;
+  left: 60%;
+  top: 80%;
+  width: 450px;
+  background: #00ff0010;
+  border: 1px solid #00ff0060;
+  font-family: "Consolas";
+  box-shadow: 0px 0px 15px 1px rgba(0,255,0,0.3);
+  -moz-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+.ship {
+  margin: 2px;
+  display: block;
+  width: 100%;
+}
+
+.name, .pos, .tgt {
+  padding: 5px;
+}
+
+.name {
+  color: #aaffaa;
+  font-size: 130%;
+}
+
+.pos {
+  color: #ffffff;
+}
+
+.tgt {
+  color: #ffffff;
+}
+
+.tgt:before {
+  content : "Moving to ";
+  color: #808080;
+}

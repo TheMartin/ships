@@ -11,12 +11,15 @@ import { RenderMoveTarget } from "../systems/renderMoveTarget";
 import { OrderMove } from "../systems/orderMove";
 import { Selectable, SelectionSystem } from "../systems/selection";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
+import { StatusWindow } from "../systems/statusWindow";
 
 import { UiManager } from "../ui/uiManager";
 import { Renderer } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
 import { Static } from "../data/static";
+
+import { shuffle } from "../util/shuffle";
 
 export class Game
 {
@@ -34,7 +37,8 @@ export class Game
     [
       new SelectionSystem(this.entityContainer, ui, renderer),
       new RenderMoveTarget(this.entityContainer, renderer),
-      new ShapeRenderer(this.entityContainer, renderer)
+      new ShapeRenderer(this.entityContainer, renderer),
+      new StatusWindow(this.entityContainer, ui)
     ];
   }
 
@@ -64,9 +68,14 @@ export class Game
 
     const corner = new Vec2(50, 50);
     const dimensions = new Vec2(600, 600);
+    const names = shuffle(["Arethusa", "Aurora", "Galatea", "Penelope", "Phaeton",
+      "Bonaventure", "Dido", "Argonaut", "Scylla", "Swiftsure",
+      "Minotaur", "Bellerophon", "Vanguard", "Collosus", "Audacious",
+      "Warspite", "Valiant"]
+      );
     for (let i = 0; i < 5; ++i)
     {
-      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0) );
+      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i]) );
     }
 
     setTimeout(updateFn, 1000 / this.fps);
