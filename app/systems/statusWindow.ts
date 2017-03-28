@@ -22,30 +22,23 @@ export class StatusWindow implements RenderSystem
     let state : any[] = [];
     this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
+      let [name, position, cachedPos, target] = e.getOptionalComponents([Named.t, Position.t, Cached.t + Position.t, MoveToTarget.t]) as [Named, Position, Cached<Position>, MoveToTarget];
       let row : any = {};
 
-      let name = e.components[Named.t] as Named;
       if (name)
-      {
         row.name = name.name;
-      }
 
-      let position = e.components[Position.t] as Position;
       if (position)
       {
         let pos = position.pos;
-        let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
         if (cachedPos)
           pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
 
         row.position = pos;
       }
 
-      let target = e.components[MoveToTarget.t] as MoveToTarget;
       if (target && target.target)
-      {
         row.target = target.target;
-      }
 
       state.push(row);
     });

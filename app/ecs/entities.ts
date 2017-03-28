@@ -18,6 +18,30 @@ export class Entity
     return this;
   }
 
+  getComponents(names : string[]) : any[]
+  {
+    let components : any[] = [];
+    for (let name of names)
+    {
+      if (!this.components[name])
+        return null;
+
+      components.push(this.components[name]);
+    }
+    return components;
+  }
+
+  getOptionalComponents(names : string[]) : any[]
+  {
+    let components : any[] = [];
+    for (let name of names)
+    {
+      if (this.components[name])
+        components.push(this.components[name]);
+    }
+    return components;
+  }
+
   readonly components : { [name : string] : Object } = { };
   readonly id : number;
   private static Count : number = 0;
@@ -45,16 +69,8 @@ export class EntityContainer
     for (let id in this.entities)
     {
       const e = this.entities[id];
-      let components : any[] = [];
-      for (let name of componentNames)
-      {
-        if (!e.components[name])
-          break;
-
-        components.push(e.components[name]);
-      }
-
-      if (components.length == componentNames.length)
+      let components : any[] = e.getComponents(componentNames);
+      if (components)
         callback(e, components);
     }
   }

@@ -17,7 +17,7 @@ export class MoveTo implements System
   {
     this.entities.forEachEntity([Position.t, Rotation.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {
-      let [position, rotation, target] = <[Position, Rotation, MoveToTarget]>(components);
+      let [position, rotation, target] = components as [Position, Rotation, MoveToTarget];
       if (!target.target)
         return;
 

@@ -17,7 +17,7 @@ export class OrderMove implements System
       {
         this.entities.forEachEntity([Selected.t, MoveToTarget.t], (e : Entity, components : any[]) =>
         {
-          let [, target] = <[Selected, MoveToTarget]>(components);
+          let [, target] = components as [Selected, MoveToTarget];
           target.target = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
         });
       }

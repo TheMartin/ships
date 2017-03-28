@@ -14,7 +14,7 @@ export class ChooseRandomTarget implements System
   {
     this.entities.forEachEntity([MoveToTarget.t], (e : Entity, components : any[]) =>
     {
-      let [target] = <[MoveToTarget]>(components);
+      let [target] = components as [MoveToTarget];
       if (!target.target)
         target.target = this.min.clone().add(new Vec2(Math.random(), Math.random()).elementMultiply(this.size));
     });

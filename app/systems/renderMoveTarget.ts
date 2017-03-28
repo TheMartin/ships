@@ -15,23 +15,23 @@ export class RenderMoveTarget implements RenderSystem
   {
     this.entities.forEachEntity([Selected.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {
-      let [, moveTarget] = <[Selected, MoveToTarget]>(components);
+      let [, moveTarget] = components as [Selected, MoveToTarget];
       if (!moveTarget.target)
         return;
 
       this.renderer.drawCircle(moveTarget.target, 10, RenderMoveTarget.targetProps);
       this.renderer.drawCircle(moveTarget.target, 5, RenderMoveTarget.targetProps);
 
-      let position = e.components[Position.t] as Position;
-      if (!position)
-        return;
+      let [position, cachedPos] = e.getOptionalComponents([Position.t, Cached.t + Position.t]) as [Position, Cached<Position>];
+      if (position)
+      {
+        let pos = position.pos;
+        let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
+        if (cachedPos && cachedPos.value)
+          pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
 
-      let pos = position.pos;
-      let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
-      if (cachedPos && cachedPos.value)
-        pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
-
-      this.renderer.drawLine(pos, moveTarget.target, RenderMoveTarget.targetProps, RenderMoveTarget.targetDash);
+        this.renderer.drawLine(pos, moveTarget.target, RenderMoveTarget.targetProps, RenderMoveTarget.targetDash);
+      }
     });
   }
 

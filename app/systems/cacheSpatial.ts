@@ -12,7 +12,7 @@ export class CachePosition implements System
   {
     this.entities.forEachEntity([Position.t, Cached.t + Position.t], (e : Entity, components : any[]) =>
     {
-      let [position, cachedPosition] = <[Position, Cached<Position>]>(components);
+      let [position, cachedPosition] = components as [Position, Cached<Position>];
       cachedPosition.value = new Position(position.pos.clone());
     });
   }
@@ -26,7 +26,7 @@ export class CacheRotation implements System
   {
     this.entities.forEachEntity([Rotation.t, Cached.t + Rotation.t], (e : Entity, components : any[]) =>
     {
-      let [rotation, cachedRotation] = <[Rotation, Cached<Rotation>]>(components);
+      let [rotation, cachedRotation] = components as [Rotation, Cached<Rotation>];
       cachedRotation.value = new Rotation(rotation.angle);
     });
   }

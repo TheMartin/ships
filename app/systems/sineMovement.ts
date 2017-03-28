@@ -13,7 +13,7 @@ export class SineMovement implements System
   {
     this.entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
     {
-      let [position] = <[Position]>(components);
+      let [position] = components as [Position];
       let pos = position.pos;
       pos.x += this.xSpeed * dt;
       pos.y = this.y0 + this.amplitude * (0.5 * Math.cos(2 * Math.PI * (pos.x - this.xMin) / this.wavelength) + 0.5);

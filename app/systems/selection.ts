@@ -104,14 +104,13 @@ export class SelectionSystem implements RenderSystem
       {
         this.entities.forEachEntity([Position.t, Selectable.t], (e : Entity, components : any[]) =>
         {
-          let [position, ] = <[Position, Selectable]>(components);
+          let [position, ] = components as [Position, Selectable];
+          let [cachedPos, selected] = e.getOptionalComponents([Cached.t + Position.t, Selected.t]) as [Cached<Position>, Selected];
           let pos = position.pos;
-          let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
           if (cachedPos && cachedPos.value)
           {
             pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
           }
-          let selected = e.components[Selected.t] as Selected;
           const within = isWithin(pos, (<Select>this.selection).box);
           if (!selected && within)
           {

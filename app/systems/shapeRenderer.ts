@@ -20,18 +20,16 @@ export class ShapeRenderer implements RenderSystem
   {
     this.entities.forEachEntity([RenderShape.t, Position.t], (e : Entity, components : any[]) =>
     {
-      let [shape, position] = <[RenderShape, Position]>(components);
+      let [shape, position] = components as [RenderShape, Position];
+      let [rotation, cachedPos, cachedRot] = e.getOptionalComponents([Rotation.t, Cached.t + Position.t, Cached.t + Rotation.t]) as [Rotation, Cached<Position>, Cached<Rotation>];
       let pos = position.pos;
-      let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
       if (cachedPos && cachedPos.value)
         pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
 
       let angle = 0;
-      let rotation = e.components[Rotation.t] as Rotation;
       if (rotation)
         angle = rotation.angle;
 
-      let cachedRot = e.components[Cached.t + Rotation.t] as Cached<Rotation>;
       if (cachedRot && cachedRot.value)
         angle = lerp(cachedRot.value.angle, angle, interp);
 
