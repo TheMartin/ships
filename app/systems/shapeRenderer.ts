@@ -4,6 +4,7 @@ import { Renderer } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
+import { interpolatePosition, interpolateRotation } from "../systems/cacheSpatial";
 import { Vec2, lerp } from "../vec2/vec2";
 
 export class RenderShape
@@ -22,18 +23,8 @@ export class ShapeRenderer implements RenderSystem
     {
       let [shape, position] = components as [RenderShape, Position];
       let [rotation, cachedPos, cachedRot] = e.getOptionalComponents([Rotation.t, Cached.t + Position.t, Cached.t + Rotation.t]) as [Rotation, Cached<Position>, Cached<Rotation>];
-      let pos = position.pos;
-      if (cachedPos && cachedPos.value)
-        pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
 
-      let angle = 0;
-      if (rotation)
-        angle = rotation.angle;
-
-      if (cachedRot && cachedRot.value)
-        angle = lerp(cachedRot.value.angle, angle, interp);
-
-      this.renderer.drawShape(shape.shape, pos, angle, 1);
+      this.renderer.drawShape(shape.shape, interpolatePosition(position, cachedPos, interp), rotation ? interpolateRotation(rotation, cachedRot, interp) : 0, 1);
     });
   }
 };

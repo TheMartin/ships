@@ -5,6 +5,7 @@ import { MoveToTarget } from "../systems/moveTo";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
 import { Cached } from "../systems/cached";
+import { interpolatePosition } from "../systems/cacheSpatial";
 import { Vec2 } from "../vec2/vec2";
 
 export class RenderMoveTarget implements RenderSystem
@@ -24,14 +25,7 @@ export class RenderMoveTarget implements RenderSystem
 
       let [position, cachedPos] = e.getOptionalComponents([Position.t, Cached.t + Position.t]) as [Position, Cached<Position>];
       if (position)
-      {
-        let pos = position.pos;
-        let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
-        if (cachedPos && cachedPos.value)
-          pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
-
-        this.renderer.drawLine(pos, moveTarget.target, RenderMoveTarget.targetProps, RenderMoveTarget.targetDash);
-      }
+        this.renderer.drawLine(interpolatePosition(position, cachedPos, interp), moveTarget.target, RenderMoveTarget.targetProps, RenderMoveTarget.targetDash);
     });
   }
 

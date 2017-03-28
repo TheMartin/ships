@@ -4,6 +4,7 @@ import { UiManager } from "../ui/uiManager";
 import { Selected } from "../systems/selection";
 import { Cached } from "../systems/cached";
 import { Position } from "../systems/spatial";
+import { interpolatePosition } from "../systems/cacheSpatial";
 import { MoveToTarget } from "../systems/moveTo";
 import { Named } from "../systems/named";
 
@@ -29,13 +30,7 @@ export class StatusWindow implements RenderSystem
         row.name = name.name;
 
       if (position)
-      {
-        let pos = position.pos;
-        if (cachedPos)
-          pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
-
-        row.position = pos;
-      }
+        row.position = interpolatePosition(position, cachedPos, interp);
 
       if (target && target.target)
         row.target = target.target;

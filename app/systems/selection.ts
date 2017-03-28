@@ -5,6 +5,7 @@ import { UiManager } from "../ui/uiManager";
 
 import { Cached } from "../systems/cached";
 import { Position } from "../systems/spatial";
+import { interpolatePosition } from "../systems/cacheSpatial";
 
 import { RenderProps } from "../renderer/renderer";
 
@@ -106,12 +107,7 @@ export class SelectionSystem implements RenderSystem
         {
           let [position, ] = components as [Position, Selectable];
           let [cachedPos, selected] = e.getOptionalComponents([Cached.t + Position.t, Selected.t]) as [Cached<Position>, Selected];
-          let pos = position.pos;
-          if (cachedPos && cachedPos.value)
-          {
-            pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
-          }
-          const within = isWithin(pos, (<Select>this.selection).box);
+          const within = isWithin(interpolatePosition(position, cachedPos, interp), (<Select>this.selection).box);
           if (!selected && within)
           {
             e.addComponent(Selected.t, new Selected());
@@ -136,13 +132,7 @@ export class SelectionSystem implements RenderSystem
     this.entities.forEachEntity([Selected.t, Position.t], (e : Entity, components : any[]) =>
     {
       let [, position] = <[Selected, Position]>(components);
-      let pos = position.pos;
-      let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
-      if (cachedPos && cachedPos.value)
-      {
-        pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
-      }
-
+      let pos = interpolatePosition(position, e.components[Cached.t + Position.t] as Cached<Position>, interp);
       const size = new Vec2(10, 10);
       this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), SelectionSystem.selectedBoxProps);
     });

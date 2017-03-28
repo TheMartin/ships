@@ -2,7 +2,7 @@ import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
-import { Vec2 } from "../vec2/vec2";
+import { Vec2, lerp } from "../vec2/vec2";
 
 export class CachePosition implements System
 {
@@ -18,6 +18,15 @@ export class CachePosition implements System
   }
 };
 
+export function interpolatePosition(pos : Position, cachedPos : Cached<Position>, interp : number) : Vec2
+{
+  let position = pos.pos;
+  if (cachedPos && cachedPos.value)
+    position = Vec2.lerp(cachedPos.value.pos, position, interp);
+
+  return position;
+}
+
 export class CacheRotation implements System
 {
   constructor(private entities : EntityContainer) {}
@@ -31,3 +40,12 @@ export class CacheRotation implements System
     });
   }
 };
+
+export function interpolateRotation(rot : Rotation, cachedRot : Cached<Rotation>, interp : number) : number
+{
+  let angle = rot.angle;
+  if (cachedRot && cachedRot.value)
+    angle = lerp(cachedRot.value.angle, angle, interp);
+
+  return angle;
+}
