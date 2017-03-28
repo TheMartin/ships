@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { UiManager } from "../ui/uiManager";
 import { MoveToTarget } from "../systems/moveTo";
@@ -15,16 +15,11 @@ export class OrderMove implements System
       let mouseEvent = e as MouseEvent;
       if (mouseEvent.button == 2)
       {
-        for (let id in this.entities.entities)
+        this.entities.forEachEntity([Selected.t, MoveToTarget.t], (e : Entity, components : any[]) =>
         {
-          let e = this.entities.entities[id];
-          let selected = e.components[Selected.t] as Selected;
-          let target = e.components[MoveToTarget.t] as MoveToTarget;
-          if (!selected || !target)
-            continue;
-
+          let [, target] = <[Selected, MoveToTarget]>(components);
           target.target = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
-        }
+        });
       }
       e.preventDefault();
     });

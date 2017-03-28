@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { MoveToTarget } from "../systems/moveTo";
 import { Vec2 } from "../vec2/vec2";
@@ -12,18 +12,12 @@ export class ChooseRandomTarget implements System
 
   update(dt : number) : void
   {
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([MoveToTarget.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let target = e.components[MoveToTarget.t] as MoveToTarget;
-      if (!target)
-        continue;
-
+      let [target] = <[MoveToTarget]>(components);
       if (!target.target)
-      {
         target.target = this.min.clone().add(new Vec2(Math.random(), Math.random()).elementMultiply(this.size));
-      }
-    }
+    });
   }
 
   private size : Vec2;

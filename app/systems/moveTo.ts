@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Vec2, norm, norm2 } from "../vec2/vec2";
@@ -15,14 +15,11 @@ export class MoveTo implements System
 
   update(dt : number) : void
   {
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([Position.t, Rotation.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let position = e.components[Position.t] as Position;
-      let rotation = e.components[Rotation.t] as Rotation;
-      let target = e.components[MoveToTarget.t] as MoveToTarget;
-      if (!position || !rotation || !target || !target.target)
-        continue;
+      let [position, rotation, target] = <[Position, Rotation, MoveToTarget]>(components);
+      if (!target.target)
+        return;
 
       const toTarget = target.target.clone().subtract(position.pos);
       if (norm2(toTarget) > 5)
@@ -34,6 +31,6 @@ export class MoveTo implements System
       {
         target.target = null;
       }
-    }
+    });
   }
 };

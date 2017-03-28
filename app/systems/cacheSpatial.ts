@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
@@ -10,16 +10,11 @@ export class CachePosition implements System
 
   update(dt : number) : void
   {
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([Position.t, Cached.t + Position.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let position = e.components[Position.t] as Position;
-      let cachedPosition = e.components[Cached.t + Position.t] as Cached<Position>;
-      if (!position || !cachedPosition)
-        continue;
-
-      cachedPosition.value = new Position(position.pos.clone())
-    }
+      let [position, cachedPosition] = <[Position, Cached<Position>]>(components);
+      cachedPosition.value = new Position(position.pos.clone());
+    });
   }
 };
 
@@ -29,15 +24,10 @@ export class CacheRotation implements System
 
   update(dt : number) : void
   {
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([Rotation.t, Cached.t + Rotation.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let rotation = e.components[Rotation.t] as Rotation;
-      let cachedRotation = e.components[Cached.t + Rotation.t] as Cached<Rotation>;
-      if (!rotation || !cachedRotation)
-        continue;
-
+      let [rotation, cachedRotation] = <[Rotation, Cached<Rotation>]>(components);
       cachedRotation.value = new Rotation(rotation.angle);
-    }
+    });
   }
 };

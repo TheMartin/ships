@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
@@ -11,13 +11,9 @@ export class SineMovement implements System
 
   update(dt : number) : void
   {
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let position = e.components[Position.t] as Position;
-      if (!position)
-        continue;
-
+      let [position] = <[Position]>(components);
       let pos = position.pos;
       pos.x += this.xSpeed * dt;
       pos.y = this.y0 + this.amplitude * (0.5 * Math.cos(2 * Math.PI * (pos.x - this.xMin) / this.wavelength) + 0.5);
@@ -31,7 +27,7 @@ export class SineMovement implements System
       {
         rotation.angle += this.rotationSpeed * dt;
       }
-    }
+    });
   }
 
   private xSpeed : number = 50;

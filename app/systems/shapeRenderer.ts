@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";
@@ -18,14 +18,9 @@ export class ShapeRenderer implements RenderSystem
 
   update(dt : number, interp : number) : void
   {
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([RenderShape.t, Position.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let shape = e.components[RenderShape.t] as RenderShape;
-      let position = e.components[Position.t] as Position;
-      if (!shape || !position)
-        continue;
-
+      let [shape, position] = <[RenderShape, Position]>(components);
       let pos = position.pos;
       let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
       if (cachedPos && cachedPos.value)
@@ -41,6 +36,6 @@ export class ShapeRenderer implements RenderSystem
         angle = lerp(cachedRot.value.angle, angle, interp);
 
       this.renderer.drawShape(shape.shape, pos, angle, 1);
-    }
+    });
   }
 };

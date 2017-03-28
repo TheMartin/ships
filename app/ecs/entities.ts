@@ -40,5 +40,24 @@ export class EntityContainer
     delete this.entities[e.id];
   }
 
+  forEachEntity(componentNames : string[], callback : (e : Entity, components : any[]) => void) : void
+  {
+    for (let id in this.entities)
+    {
+      const e = this.entities[id];
+      let components : any[] = [];
+      for (let name of componentNames)
+      {
+        if (!e.components[name])
+          break;
+
+        components.push(e.components[name]);
+      }
+
+      if (components.length == componentNames.length)
+        callback(e, components);
+    }
+  }
+
   readonly entities : EntityCollection = {};
 };

@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager } from "../ui/uiManager";
 import { Selected } from "../systems/selection";
@@ -20,13 +20,8 @@ export class StatusWindow implements RenderSystem
   update(dt : number, interp : number) : void
   {
     let state : any[] = [];
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let selected = e.components[Selected.t] as Selected;
-      if (!selected)
-        continue;
-
       let row : any = {};
 
       let name = e.components[Named.t] as Named;
@@ -53,7 +48,7 @@ export class StatusWindow implements RenderSystem
       }
 
       state.push(row);
-    }
+    });
 
     if (state.length == 0)
     {

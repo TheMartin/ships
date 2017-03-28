@@ -1,4 +1,4 @@
-import { EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer } from "../renderer/renderer";
 import { UiManager } from "../ui/uiManager";
@@ -63,7 +63,7 @@ export class SelectionSystem implements RenderSystem
       let mouseEvent = e as MouseEvent;
       if (mouseEvent.button == 0)
       {
-        this.dragStart = new Vec2(mouseEvent.clientX, mouseEvent.clientY);        
+        this.dragStart = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
       }
     });
 
@@ -72,7 +72,7 @@ export class SelectionSystem implements RenderSystem
       let mouseEvent = e as MouseEvent;
       if ((mouseEvent.buttons & 1) != 0)
       {
-        this.dragCurrent = new Vec2(mouseEvent.clientX, mouseEvent.clientY);        
+        this.dragCurrent = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
       }
     });
 
@@ -102,14 +102,9 @@ export class SelectionSystem implements RenderSystem
     {
       if (isSelect(this.selection))
       {
-        for (let id in this.entities.entities)
+        this.entities.forEachEntity([Position.t, Selectable.t], (e : Entity, components : any[]) =>
         {
-          let e = this.entities.entities[id];
-          let position = e.components[Position.t] as Position;
-          let selectable = e.components[Selectable.t] as Selectable;
-          if (!position || !selectable)
-            continue;
-
+          let [position, ] = <[Position, Selectable]>(components);
           let pos = position.pos;
           let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
           if (cachedPos && cachedPos.value)
@@ -117,7 +112,7 @@ export class SelectionSystem implements RenderSystem
             pos = Vec2.lerp(cachedPos.value.pos, pos, interp);
           }
           let selected = e.components[Selected.t] as Selected;
-          const within = isWithin(pos, this.selection.box);
+          const within = isWithin(pos, (<Select>this.selection).box);
           if (!selected && within)
           {
             e.addComponent(Selected.t, new Selected());
@@ -126,31 +121,22 @@ export class SelectionSystem implements RenderSystem
           {
             e.removeComponent(Selected.t);
           }
-        }        
+        });
       }
       else
       {
-        for (let id in this.entities.entities)
+        this.entities.forEachEntity([], (e : Entity, components : any[]) =>
         {
-          let e = this.entities.entities[id];
           e.removeComponent(Selected.t);
-        }
+        });
       }
 
       this.selection = null;
     }
 
-    for (let id in this.entities.entities)
+    this.entities.forEachEntity([Selected.t, Position.t], (e : Entity, components : any[]) =>
     {
-      let e = this.entities.entities[id];
-      let selected = e.components[Selected.t] as Selected;
-      if (!selected)
-        continue;
-
-      let position = e.components[Position.t] as Position;
-      if (!position)
-        continue;
-
+      let [, position] = <[Selected, Position]>(components);
       let pos = position.pos;
       let cachedPos = e.components[Cached.t + Position.t] as Cached<Position>;
       if (cachedPos && cachedPos.value)
@@ -160,7 +146,7 @@ export class SelectionSystem implements RenderSystem
 
       const size = new Vec2(10, 10);
       this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), SelectionSystem.selectedBoxProps);
-    }
+    });
 
     if (this.dragStart && this.dragCurrent)
     {
