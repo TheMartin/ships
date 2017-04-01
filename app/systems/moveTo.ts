@@ -22,7 +22,7 @@ export class MoveTo implements System
         return;
 
       const toTarget = target.target.clone().subtract(position.pos);
-      if (norm2(toTarget) > 5)
+      if (norm2(toTarget) > 0.5)
       {
         rotation.angle = toTarget.angle();
         position.pos.add(toTarget.normalized().multiply( Math.min(norm(toTarget), this.speed * dt) ));
