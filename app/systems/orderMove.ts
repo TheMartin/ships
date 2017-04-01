@@ -11,7 +11,7 @@ export class OrderMove implements RenderSystem
 {
   constructor(private entities : EntityContainer, ui : UiManager, viewport : Viewport)
   {
-    ui.addEventListener("mousedown", (e : Event) =>
+    ui.addEventListener("mouseup", (e : Event) =>
     {
       let mouseEvent = e as MouseEvent;
       if (mouseEvent.button == 2)
