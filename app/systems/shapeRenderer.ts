@@ -1,6 +1,6 @@
 import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
-import { Renderer } from "../renderer/renderer";
+import { Renderer, Viewport } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
@@ -15,7 +15,7 @@ export class RenderShape
 
 export class ShapeRenderer implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private renderer : Renderer) {}
+  constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
 
   update(dt : number, interp : number) : void
   {
@@ -24,7 +24,7 @@ export class ShapeRenderer implements RenderSystem
       let [shape, position] = components as [RenderShape, Position];
       let [rotation, cachedPos, cachedRot] = e.getOptionalComponents([Rotation.t, Cached.t + Position.t, Cached.t + Rotation.t]) as [Rotation, Cached<Position>, Cached<Rotation>];
 
-      this.renderer.drawShape(shape.shape, interpolatePosition(position, cachedPos, interp), rotation ? interpolateRotation(rotation, cachedRot, interp) : 0, 1);
+      this.renderer.drawShape(shape.shape, interpolatePosition(position, cachedPos, interp), rotation ? interpolateRotation(rotation, cachedRot, interp) : 0, 1, this.viewport);
     });
   }
 };

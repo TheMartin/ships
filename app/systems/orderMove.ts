@@ -1,14 +1,15 @@
 import { Entity, EntityContainer } from "../ecs/entities";
-import { System } from "../ecs/system";
+import { RenderSystem } from "../ecs/renderSystem";
+import { Viewport } from "../renderer/renderer";
 import { UiManager } from "../ui/uiManager";
 import { MoveToTarget } from "../systems/moveTo";
 import { Selected } from "../systems/selection";
 
 import { Vec2 } from "../vec2/vec2";
 
-export class OrderMove implements System
+export class OrderMove implements RenderSystem
 {
-  constructor(private entities : EntityContainer, ui : UiManager)
+  constructor(private entities : EntityContainer, ui : UiManager, viewport : Viewport)
   {
     ui.addEventListener("mousedown", (e : Event) =>
     {
@@ -18,14 +19,14 @@ export class OrderMove implements System
         this.entities.forEachEntity([Selected.t, MoveToTarget.t], (e : Entity, components : any[]) =>
         {
           let [, target] = components as [Selected, MoveToTarget];
-          target.target = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
+          target.target = viewport.inverseTransform(new Vec2(mouseEvent.clientX, mouseEvent.clientY));
         });
       }
       e.preventDefault();
     });
   }
 
-  update(dt : number) : void
+  update(dt : number, interp : number) : void
   {
   }
 

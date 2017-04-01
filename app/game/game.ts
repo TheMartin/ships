@@ -12,9 +12,10 @@ import { OrderMove } from "../systems/orderMove";
 import { Selectable, SelectionSystem } from "../systems/selection";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 import { StatusWindow } from "../systems/statusWindow";
+import { ViewportController } from "../systems/viewportController";
 
 import { UiManager } from "../ui/uiManager";
-import { Renderer } from "../renderer/renderer";
+import { Renderer, Viewport } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
 import { Static } from "../data/static";
@@ -29,15 +30,18 @@ export class Game
     [
       new CachePosition(this.entityContainer),
       new CacheRotation(this.entityContainer),
-      new MoveTo(this.entityContainer, 50),
-      new OrderMove(this.entityContainer, ui)
+      new MoveTo(this.entityContainer, 50)
     ];
+
+    this.viewport = new Viewport(new Vec2(0, 0), 0, 1);
 
     this.renderSystems =
     [
-      new SelectionSystem(this.entityContainer, ui, renderer),
-      new RenderMoveTarget(this.entityContainer, renderer),
-      new ShapeRenderer(this.entityContainer, renderer),
+      new ViewportController(ui, 1000, this.viewport),
+      new SelectionSystem(this.entityContainer, ui, renderer, this.viewport),
+      new OrderMove(this.entityContainer, ui, this.viewport),
+      new RenderMoveTarget(this.entityContainer, renderer, this.viewport),
+      new ShapeRenderer(this.entityContainer, renderer, this.viewport),
       new StatusWindow(this.entityContainer, ui)
     ];
   }
@@ -106,4 +110,5 @@ export class Game
   private entityContainer : EntityContainer = new EntityContainer();
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];
+  private viewport : Viewport = Viewport.identity;
 };

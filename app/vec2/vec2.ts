@@ -59,6 +59,22 @@ export class Vec2
     return this.clone().normalize();
   }
 
+  rotate(a : number) : Vec2
+  {
+    const c = Math.cos(a);
+    const s = Math.sin(a);
+    const x = c * this.x - s * this.y;
+    const y = s * this.x + c * this.y;
+    this.x = x;
+    this.y = y;
+    return this;
+  }
+
+  rotated(a : number) : Vec2
+  {
+    return this.clone().rotate(a);
+  }
+
   angle() : number
   {
     return Math.atan2(this.x, -this.y);
@@ -73,6 +89,8 @@ export class Vec2
   {
     return new Vec2(Math.random(), Math.random());
   }
+
+  static readonly zero : Vec2 = new Vec2(0, 0);
 };
 
 export function dot(v1 : Vec2, v2 : Vec2) : number

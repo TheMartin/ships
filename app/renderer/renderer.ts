@@ -6,6 +6,21 @@ export interface RenderProps
   fillColor? : string;
   stroke? : string;
   lineWidth? : number;
+  lineDash? : number[];
+};
+
+export class Viewport
+{
+  constructor(public pos : Vec2, public rot : number, public scale : number) {}
+  transform(v : Vec2) : Vec2
+  {
+    return v.rotated(this.rot).multiply(this.scale).add(this.pos);
+  }
+  inverseTransform(v : Vec2) : Vec2
+  {
+    return v.clone().subtract(this.pos).multiply(1 / this.scale).rotate(-this.rot);
+  }
+  static readonly identity : Viewport = new Viewport(Vec2.zero, 0, 1);
 };
 
 export class Renderer
@@ -17,20 +32,14 @@ export class Renderer
     this.ctx.lineCap = "round";
   }
 
-  drawShape(shape : Shape, pos : Vec2, rot : number, scale : number)
+  drawShape(shape : Shape, pos : Vec2, rot : number, scale : number, viewport : Viewport = Viewport.identity)
   {
-    const xx = scale * Math.cos(rot);
-    const xy = scale * Math.sin(rot);
-    this.ctx.setTransform(xx, xy,
-      -xy, xx,
-      pos.x, pos.y
-      );
-
+    this.setTransform(viewport.transform(pos), rot + viewport.rot, scale * viewport.scale);
     this.setProps(shape.props);
 
     this.ctx.beginPath();
     this.ctx.moveTo(shape.vertices[0].x, shape.vertices[0].y);
-    for (let i = 1; i < shape.vertices.length; i++)
+    for (let i = 1; i < shape.vertices.length; ++i)
     {
       this.ctx.lineTo(shape.vertices[i].x, shape.vertices[i].y);
     }
@@ -39,15 +48,15 @@ export class Renderer
     this.render(shape.props);
   }
 
-  drawLine(a : Vec2, b : Vec2, props : RenderProps = {}, lineDash? : number[])
+  drawLine(a : Vec2, b : Vec2, props : RenderProps = {}, viewport : Viewport = Viewport.identity)
   {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.setViewport(viewport);
     this.setProps(props);
     let oldDash : number[] = [];
-    if (lineDash)
+    if (props.lineDash)
     {
       oldDash = this.ctx.getLineDash();
-      this.ctx.setLineDash(lineDash);
+      this.ctx.setLineDash(props.lineDash);
     }
 
     this.ctx.beginPath();
@@ -56,15 +65,15 @@ export class Renderer
 
     this.render(props);
 
-    if (lineDash)
+    if (props.lineDash)
     {
       this.ctx.setLineDash(oldDash);
     }
   }
 
-  drawRect(a : Vec2, b : Vec2, props : RenderProps = {})
+  drawRect(a : Vec2, b : Vec2, props : RenderProps = {}, viewport : Viewport = Viewport.identity)
   {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.setViewport(viewport);
     this.setProps(props);
 
     const x = Math.min(a.x, b.x);
@@ -81,9 +90,9 @@ export class Renderer
     }
   }
 
-  drawCircle(center : Vec2, radius : number, props : RenderProps = {})
+  drawCircle(center : Vec2, radius : number, props : RenderProps = {}, viewport : Viewport = Viewport.identity)
   {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.setViewport(viewport);
     this.setProps(props);
 
     this.ctx.beginPath();
@@ -95,7 +104,7 @@ export class Renderer
 
   clear()
   {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.setIdentityTransform();
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
@@ -125,6 +134,33 @@ export class Renderer
     {
       this.ctx.stroke();
     }
+  }
+
+  private setViewport(viewport : Viewport)
+  {
+    if (viewport == Viewport.identity)
+    {
+      this.setIdentityTransform();
+    }
+    else
+    {
+      this.setTransform(viewport.pos, viewport.rot, viewport.scale);
+    }
+  }
+
+  private setIdentityTransform()
+  {
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  private setTransform(pos : Vec2, rot : number, scale : number)
+  {
+    const xx = scale * Math.cos(rot);
+    const xy = scale * Math.sin(rot);
+    this.ctx.setTransform(xx, xy,
+      -xy, xx,
+      pos.x, pos.y
+      );
   }
 
   private ctx : CanvasRenderingContext2D;

@@ -1,6 +1,6 @@
 import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
-import { Renderer } from "../renderer/renderer";
+import { Renderer, Viewport } from "../renderer/renderer";
 import { UiManager } from "../ui/uiManager";
 
 import { Cached } from "../systems/cached";
@@ -57,7 +57,7 @@ function isSelect(selection : Selection): selection is Select
 
 export class SelectionSystem implements RenderSystem
 {
-  constructor(private entities : EntityContainer, ui : UiManager, private renderer : Renderer)
+  constructor(private entities : EntityContainer, ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
     ui.addEventListener("mousedown", (e : Event) =>
     {
@@ -107,7 +107,7 @@ export class SelectionSystem implements RenderSystem
         {
           let [position, ] = components as [Position, Selectable];
           let [cachedPos, selected] = e.getOptionalComponents([Cached.t + Position.t, Selected.t]) as [Cached<Position>, Selected];
-          const within = isWithin(interpolatePosition(position, cachedPos, interp), (<Select>this.selection).box);
+          const within = isWithin(this.viewport.transform(interpolatePosition(position, cachedPos, interp)), (<Select>this.selection).box);
           if (!selected && within)
           {
             e.addComponent(Selected.t, new Selected());
@@ -132,8 +132,8 @@ export class SelectionSystem implements RenderSystem
     this.entities.forEachEntity([Selected.t, Position.t], (e : Entity, components : any[]) =>
     {
       let [, position] = <[Selected, Position]>(components);
-      let pos = interpolatePosition(position, e.components[Cached.t + Position.t] as Cached<Position>, interp);
-      const size = new Vec2(10, 10);
+      let pos = this.viewport.transform(interpolatePosition(position, e.components[Cached.t + Position.t] as Cached<Position>, interp));
+      const size = new Vec2(10, 10).multiply(this.viewport.scale);
       this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), SelectionSystem.selectedBoxProps);
     });
 

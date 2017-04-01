@@ -23,4 +23,14 @@ export class UiManager
   {
     this.rootElement.removeChild(elem);
   }
+
+  canvasWidth() : number
+  {
+    return this.canvas.width;
+  }
+
+  canvasHeight() : number
+  {
+    return this.canvas.height;
+  }
 };
