@@ -1,6 +1,7 @@
 import { Game } from "./game/game";
 import { Renderer } from "./renderer/renderer";
 import { UiManager } from "./ui/uiManager";
+import "./styles/styles.css";
 
 let content = document.getElementById("content");
 let canvas = document.createElement("canvas");
