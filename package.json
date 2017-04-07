@@ -1,14 +1,14 @@
 {
   "name": "ships",
   "version": "0.1.0",
-  "description": "",
+  "description": "http://themartin.github.io/code-gloat/",
   "scripts": {
     "start": "webpack-dev-server --inline --progress --config config/webpack.dev.js --port 8080 --open",
     "build": "rimraf dist && webpack --config config/webpack.prod.js --progress --profile --bail"
   },
   "keywords": [],
-  "author": "",
-  "license": "MIT",
+  "author": "TheMartin",
+  "license": "GPLv3",
   "dependencies": {
     "core-js": "^2.4.1"
   },
@@ -29,5 +29,8 @@
     "webpack-merge": "^3.0.0",
     "tslint": "^3.15.1"
   },
-  "repository": {}
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/TheMartin/ships.git"
+  }
 }
