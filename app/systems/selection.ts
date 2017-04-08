@@ -5,6 +5,7 @@ import { UiManager } from "../ui/uiManager";
 
 import { Cached } from "../systems/cached";
 import { Position } from "../systems/spatial";
+import { Controlled, Player } from "../systems/playable";
 import { interpolatePosition } from "../systems/cacheSpatial";
 
 import { RenderProps } from "../renderer/renderer";
@@ -57,7 +58,7 @@ function isSelect(selection : Selection): selection is Select
 
 export class SelectionSystem implements RenderSystem
 {
-  constructor(private entities : EntityContainer, ui : UiManager, private renderer : Renderer, private viewport : Viewport)
+  constructor(private entities : EntityContainer, private player : Player, ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
     ui.addEventListener("mousedown", (e : Event) =>
     {
@@ -103,9 +104,12 @@ export class SelectionSystem implements RenderSystem
     {
       if (isSelect(this.selection))
       {
-        this.entities.forEachEntity([Position.t, Selectable.t], (e : Entity, components : any[]) =>
+        this.entities.forEachEntity([Position.t, Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
         {
-          let [position, ] = components as [Position, Selectable];
+          let [position, , controlled] = components as [Position, Selectable, Controlled];
+          if (controlled.player !== this.player)
+            return;
+
           let [cachedPos, selected] = e.getOptionalComponents([Cached.t + Position.t, Selected.t]) as [Cached<Position>, Selected];
           const within = isWithin(this.viewport.transform(interpolatePosition(position, cachedPos, interp)), (<Select>this.selection).box);
           if (!selected && within)

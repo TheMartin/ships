@@ -13,6 +13,7 @@ import { Selectable, SelectionSystem } from "../systems/selection";
 import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 import { StatusWindow } from "../systems/statusWindow";
 import { ViewportController } from "../systems/viewportController";
+import { Player, PlayerType } from "../systems/playable";
 
 import { UiManager } from "../ui/uiManager";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -26,10 +27,15 @@ export class Game
 {
   constructor(private ui : UiManager, private renderer : Renderer)
   {
+    let player = new Player(PlayerType.Local);
+    let ai = new Player(PlayerType.Ai);
+    this.players = [player, ai];
+
     this.updateSystems =
     [
       new CachePosition(this.entityContainer),
       new CacheRotation(this.entityContainer),
+      new ChooseRandomTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
       new MoveTo(this.entityContainer, 50)
     ];
 
@@ -38,8 +44,8 @@ export class Game
     this.renderSystems =
     [
       new ViewportController(ui, 1000, this.viewport),
-      new SelectionSystem(this.entityContainer, ui, renderer, this.viewport),
-      new OrderMove(this.entityContainer, ui, this.viewport),
+      new SelectionSystem(this.entityContainer, player, ui, renderer, this.viewport),
+      new OrderMove(this.entityContainer, player, ui, this.viewport),
       new RenderMoveTarget(this.entityContainer, renderer, this.viewport),
       new ShapeRenderer(this.entityContainer, renderer, this.viewport),
       new StatusWindow(this.entityContainer, ui)
@@ -79,7 +85,11 @@ export class Game
       );
     for (let i = 0; i < 5; ++i)
     {
-      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i]) );
+      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.Ship, this.players[0]) );
+    }
+    for (let i = 5; i < 10; ++i)
+    {
+      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.NeutralShip, this.players[1]) );
     }
 
     setTimeout(updateFn, 1000 / this.fps);
@@ -111,4 +121,5 @@ export class Game
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];
   private viewport : Viewport = Viewport.identity;
+  private players : Player[] = [];
 };
