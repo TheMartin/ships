@@ -31,6 +31,29 @@ function setProps($target : HTMLElement, props : PropMap) : void
   Object.keys(props).forEach(name => setProp($target, name, props[name]));
 }
 
+function removeProp($target : HTMLElement, name : string, oldValue : string) : void
+{
+  $target.removeAttribute(name);
+}
+
+function updateProp($target : HTMLElement, name : string, newValue : string, oldValue : string) : void
+{
+  if (!newValue)
+  {
+    removeProp($target, name, oldValue);
+  }
+  else if (!oldValue || oldValue !== newValue)
+  {
+    setProp($target, name, newValue);
+  }
+}
+
+function updateProps($target : HTMLElement, newProps : PropMap, oldProps : PropMap = {}) : void
+{
+  const props = Object.assign({}, newProps, oldProps);
+  Object.keys(props).forEach(name => updateProp($target, name, newProps[name], oldProps[name]));
+}
+
 function isElement(node : VdomNode) : node is VdomElement
 {
   return (<VdomElement>node).type !== undefined;
@@ -68,6 +91,7 @@ export function updateElementChildren($element : HTMLElement, newNode : VdomElem
     }
     else if (isElement(newNode.children[i]))
     {
+      updateProps($element.childNodes[i] as HTMLElement, (<VdomElement>newNode.children[i]).props, (<VdomElement>oldNode.children[i]).props);
       updateElementChildren($element.childNodes[i] as HTMLElement, newNode.children[i] as VdomElement, oldNode.children[i] as VdomElement);
     }
   }

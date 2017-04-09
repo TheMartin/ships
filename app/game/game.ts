@@ -6,7 +6,7 @@ import { Cached } from "../systems/cached";
 import { Position, Rotation } from "../systems/spatial";
 import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
 import { MoveTo, MoveToTarget } from "../systems/moveTo";
-import { ChooseRandomTarget } from "../systems/randomTarget";
+import { ChooseRandomMoveTarget } from "../systems/randomMoveTarget";
 import { RenderMoveTarget } from "../systems/renderMoveTarget";
 import { OrderMove } from "../systems/orderMove";
 import { Selectable, SelectionSystem } from "../systems/selection";
@@ -14,6 +14,9 @@ import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
 import { StatusWindow } from "../systems/statusWindow";
 import { ViewportController } from "../systems/viewportController";
 import { Player, PlayerType } from "../systems/playable";
+import { AttackTarget, Targetable } from "../systems/attackTarget";
+import { RenderAttackTarget } from "../systems/renderAttackTarget";
+import { OrderAttack } from "../systems/orderAttack";
 
 import { UiManager } from "../ui/uiManager";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -35,7 +38,7 @@ export class Game
     [
       new CachePosition(this.entityContainer),
       new CacheRotation(this.entityContainer),
-      new ChooseRandomTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
+      new ChooseRandomMoveTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
       new MoveTo(this.entityContainer, 50)
     ];
 
@@ -46,7 +49,9 @@ export class Game
       new ViewportController(ui, 1000, this.viewport),
       new SelectionSystem(this.entityContainer, player, ui, renderer, this.viewport),
       new OrderMove(this.entityContainer, player, ui, this.viewport),
+      new OrderAttack(this.entityContainer, player, ui, this.viewport),
       new RenderMoveTarget(this.entityContainer, renderer, this.viewport),
+      new RenderAttackTarget(this.entityContainer, renderer, this.viewport),
       new ShapeRenderer(this.entityContainer, renderer, this.viewport),
       new StatusWindow(this.entityContainer, ui)
     ];

@@ -6,6 +6,7 @@ import { MoveToTarget } from "../systems/moveTo";
 import { Selectable } from "../systems/selection";
 import { Named } from "../systems/named";
 import { Controlled, Player } from "../systems/playable";
+import { AttackTarget, Targetable } from "../systems/attackTarget";
 
 import { Shape } from "../renderer/shape";
 import { Vec2 } from "../vec2/vec2";
@@ -70,6 +71,12 @@ export class Static
       )
       .addComponent(Controlled.t,
         new Controlled(player)
+      )
+      .addComponent(Targetable.t,
+        new Targetable()
+      )
+      .addComponent(AttackTarget.t,
+        new AttackTarget()
       );
   };
 };

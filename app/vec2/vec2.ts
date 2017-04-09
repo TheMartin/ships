@@ -108,6 +108,16 @@ export function norm(v : Vec2) : number
   return Math.sqrt(norm2(v));
 };
 
+export function distance2(v1 : Vec2, v2 : Vec2) : number
+{
+  return norm2(v1.clone().subtract(v2));
+};
+
+export function distance(v1 : Vec2, v2 : Vec2) : number
+{
+  return Math.sqrt(distance2(v1, v2));
+};
+
 export function lerp(x1 : number, x2 : number, alpha : number) : number
 {
   return (1 - alpha) * x1 + alpha * x2;

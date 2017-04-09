@@ -7,6 +7,7 @@ import { Position } from "../systems/spatial";
 import { interpolatePosition } from "../systems/cacheSpatial";
 import { MoveToTarget } from "../systems/moveTo";
 import { Named } from "../systems/named";
+import { AttackTarget, Targetable } from "../systems/attackTarget";
 
 import { VdomNode, VdomElement, createElement, updateElementChildren } from "../vdom/vdom";
 
@@ -30,7 +31,10 @@ export class StatusWindow implements RenderSystem
     let elem = VdomElement.create("div", {"class" : "window"}, []);
     this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
-      let [name, position, cachedPos, target] = e.getOptionalComponents([Named.t, Position.t, Cached.t + Position.t, MoveToTarget.t]) as [Named, Position, Cached<Position>, MoveToTarget];
+      let [name, position, cachedPos, moveTarget, attackTarget] = e.getOptionalComponents(
+        [Named.t, Position.t, Cached.t + Position.t, MoveToTarget.t, AttackTarget.t]
+        ) as [Named, Position, Cached<Position>, MoveToTarget, AttackTarget];
+
       let elems : VdomElement[] = [];
 
       if (name)
@@ -39,8 +43,21 @@ export class StatusWindow implements RenderSystem
       if (position)
         elems.push(VdomElement.create("span", {"class" : "pos"}, [positionToString(interpolatePosition(position, cachedPos, interp))]));
 
-      if (target && target.target)
-        elems.push(VdomElement.create("span", {"class" : "tgt"}, [positionToString(target.target)]));
+      if (moveTarget && moveTarget.target)
+        elems.push(VdomElement.create("span", {"class" : "tgt"}, [positionToString(moveTarget.target)]));
+
+      if (attackTarget && attackTarget.target)
+      {
+        let targetName : string = null;
+        this.entities.forEachEntity([Targetable.t, Named.t], (e : Entity, components : any[]) =>
+        {
+          let [target, named] = components as [Targetable, Named];
+          if (target === attackTarget.target)
+            targetName = named.name;
+        });
+        if (targetName)
+          elems.push(VdomElement.create("span", {"class" : "atk"}, [targetName]))
+      }
 
       elem.children.push(VdomElement.create("div", {"class" : "ship"}, elems));
     });

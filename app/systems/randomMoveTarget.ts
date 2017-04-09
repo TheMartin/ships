@@ -4,7 +4,7 @@ import { MoveToTarget } from "../systems/moveTo";
 import { Controlled, Player } from "../systems/playable";
 import { Vec2 } from "../vec2/vec2";
 
-export class ChooseRandomTarget implements System
+export class ChooseRandomMoveTarget implements System
 {
   constructor(private entities : EntityContainer, private player : Player, private min : Vec2, max : Vec2)
   {
