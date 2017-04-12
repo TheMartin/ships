@@ -48,15 +48,16 @@ export class StatusWindow implements RenderSystem
 
       if (attackTarget && attackTarget.target)
       {
-        let targetName : string = null;
-        this.entities.forEachEntity([Targetable.t, Named.t], (e : Entity, components : any[]) =>
+        let targetEntity = this.entities.findEntity([Targetable.t, Named.t], (e : Entity, components : any[]) =>
         {
-          let [target, named] = components as [Targetable, Named];
-          if (target === attackTarget.target)
-            targetName = named.name;
+          let [target,] = components as [Targetable, Named];
+          return target === attackTarget.target;
         });
-        if (targetName)
-          elems.push(VdomElement.create("span", {"class" : "atk"}, [targetName]))
+        if (targetEntity)
+        {
+          let [targetName] = targetEntity.getComponents([Named.t]) as [Named];
+          elems.push(VdomElement.create("span", {"class" : "atk"}, [targetName.name]))
+        }
       }
 
       elem.children.push(VdomElement.create("div", {"class" : "ship"}, elems));

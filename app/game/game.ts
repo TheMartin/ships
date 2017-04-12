@@ -17,6 +17,7 @@ import { Player, PlayerType } from "../systems/playable";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
 import { RenderAttackTarget } from "../systems/renderAttackTarget";
 import { OrderAttack } from "../systems/orderAttack";
+import { UpdateClickable } from "../systems/clickable";
 
 import { UiManager } from "../ui/uiManager";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -28,8 +29,10 @@ import { shuffle } from "../util/shuffle";
 
 export class Game
 {
-  constructor(private ui : UiManager, private renderer : Renderer)
+  constructor(rootElement : HTMLElement, canvas : HTMLCanvasElement, private renderer : Renderer)
   {
+    this.ui = new UiManager(this.entityContainer, rootElement, canvas);
+
     let player = new Player(PlayerType.Local);
     let ai = new Player(PlayerType.Ai);
     this.players = [player, ai];
@@ -46,14 +49,15 @@ export class Game
 
     this.renderSystems =
     [
-      new ViewportController(ui, 1000, this.viewport),
-      new SelectionSystem(this.entityContainer, player, ui, renderer, this.viewport),
-      new OrderMove(this.entityContainer, player, ui, this.viewport),
-      new OrderAttack(this.entityContainer, player, ui, this.viewport),
+      new UpdateClickable(this.entityContainer, this.viewport),
+      new ViewportController(this.ui, 1000, this.viewport),
+      new SelectionSystem(this.entityContainer, player, this.ui, renderer, this.viewport),
+      new OrderMove(this.entityContainer, player, this.ui, this.viewport),
+      new OrderAttack(this.entityContainer, player, this.ui, this.viewport),
       new RenderMoveTarget(this.entityContainer, renderer, this.viewport),
       new RenderAttackTarget(this.entityContainer, renderer, this.viewport),
       new ShapeRenderer(this.entityContainer, renderer, this.viewport),
-      new StatusWindow(this.entityContainer, ui)
+      new StatusWindow(this.entityContainer, this.ui)
     ];
   }
 
@@ -65,20 +69,20 @@ export class Game
 
     let updateFn = () =>
     {
+      setTimeout(updateFn, 1000 / this.fps);
       const now = performance.now();
       const dt = (now - this.lastUpdate) / 1000;
       this.lastUpdate = now;
       this.update(dt);
-      setTimeout(updateFn, 1000 / this.fps);
     };
 
     let drawFn = (now : any) =>
     {
+      requestAnimationFrame(drawFn);
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
       const interp = this.fps * (now - this.lastUpdate) / 1000;
       this.draw(dt, interp);
-      requestAnimationFrame(drawFn);
     };
 
     const corner = new Vec2(50, 50);
@@ -123,6 +127,7 @@ export class Game
   private lastDraw : number = 0;
   private fps : number = 0;
   private entityContainer : EntityContainer = new EntityContainer();
+  private ui : UiManager;
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];
   private viewport : Viewport = Viewport.identity;

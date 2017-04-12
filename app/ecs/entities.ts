@@ -75,5 +75,36 @@ export class EntityContainer
     }
   }
 
+  findEntity(componentNames : string[], callback : (e : Entity, components : any[]) => boolean) : Entity
+  {
+    for (let id in this.entities)
+    {
+      const e = this.entities[id];
+      let components : any[] = e.getComponents(componentNames);
+      if (components)
+      {
+        if (callback(e, components))
+          return e;
+      }
+    }
+    return null;
+  }
+
+  filterEntities(componentNames : string[], callback : (e : Entity, components : any[]) => boolean) : Entity[]
+  {
+    let entities : Entity[] = [];
+    for (let id in this.entities)
+    {
+      const e = this.entities[id];
+      let components : any[] = e.getComponents(componentNames);
+      if (components)
+      {
+        if (callback(e, components))
+          entities.push(e);
+      }
+    }
+    return entities;
+  }
+
   readonly entities : EntityCollection = {};
 };

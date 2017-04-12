@@ -1,55 +1,68 @@
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
-import { UiManager } from "../ui/uiManager";
+import { UiManager, Events, MouseButton } from "../ui/uiManager";
 
 import { Vec2, lerp } from "../vec2/vec2";
 
 export class ViewportController implements RenderSystem
 {
-  constructor(ui : UiManager, private scrollSpeed : number, private viewport : Viewport)
+  constructor(private ui : UiManager, private scrollSpeed : number, private viewport : Viewport)
   {
-    ui.addEventListener("mousemove", (e : MouseEvent) =>
+    ui.addEventListener("dragstart", (e : Events.MouseDragStart) =>
     {
-      this.screenScroll.x = this.screenScroll.y = 0;
-      if ((e.buttons & 2) != 0)
+      if (e.button === MouseButton.Right)
       {
-        this.screenMove.add(new Vec2(e.clientX, e.clientY).subtract(this.lastMousePos));
+        this.lastMousePos = e.pos.clone();
+        this.dragging = true;
       }
-      else
-      {
-        const relX = e.clientX / ui.canvasWidth();
-        const relY = e.clientY / ui.canvasHeight();
-        if (relX < 0.1)
-        {
-          this.screenScroll.x = Math.pow(lerp(1, 0, relX / 0.1), 2);
-        }
-        else if (relX > 0.9)
-        {
-          this.screenScroll.x = -Math.pow(lerp(0, 1, (relX - 0.9) / 0.1), 2);
-        }
+    });
 
-        if (relY < 0.1)
-        {
-          this.screenScroll.y = Math.pow(lerp(1, 0, relY / 0.1), 2);
-        }
-        else if (relY > 0.9)
-        {
-          this.screenScroll.y = -Math.pow(lerp(0, 1, (relY - 0.9) / 0.1), 2);
-        }
-      }
-      this.lastMousePos.x = e.clientX;
-      this.lastMousePos.y = e.clientY;
+    ui.addEventListener("dragend", (e : Events.MouseDragStart) =>
+    {
+      if (e.button === MouseButton.Right)
+        this.dragging = false;
     });
   }
 
   update(dt : number, interp : number) : void
   {
-    this.viewport.pos.add(this.screenScroll.clone().multiply(this.scrollSpeed * dt));
-    this.viewport.pos.add(this.screenMove);
-    this.screenMove.x = this.screenMove.y = 0;
+    const mousePos = this.ui.mousePosition();
+    if (!mousePos)
+      return;
+
+    if (this.dragging)
+    {
+      this.viewport.pos.add(mousePos.clone().subtract(this.lastMousePos));
+    }
+    else
+    {
+      let screenScroll = new Vec2(0, 0);
+      const relX = mousePos.x / this.ui.canvasWidth();
+      const relY = mousePos.y / this.ui.canvasHeight();
+      if (relX < 0.1)
+      {
+        screenScroll.x = Math.pow(lerp(1, 0, relX / 0.1), 2);
+      }
+      else if (relX > 0.9)
+      {
+        screenScroll.x = -Math.pow(lerp(0, 1, (relX - 0.9) / 0.1), 2);
+      }
+
+      if (relY < 0.1)
+      {
+        screenScroll.y = Math.pow(lerp(1, 0, relY / 0.1), 2);
+      }
+      else if (relY > 0.9)
+      {
+        screenScroll.y = -Math.pow(lerp(0, 1, (relY - 0.9) / 0.1), 2);
+      }
+
+      this.viewport.pos.add(screenScroll.multiply(this.scrollSpeed * dt));
+    }
+
+    this.lastMousePos = mousePos.clone();
   }
 
-  private lastMousePos : Vec2 = new Vec2(0, 0);
-  private screenMove : Vec2 = new Vec2(0, 0);
-  private screenScroll : Vec2 = new Vec2(0, 0);
+  private dragging : boolean = false;
+  private lastMousePos : Vec2;
 };

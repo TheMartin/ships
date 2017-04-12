@@ -1,7 +1,7 @@
 import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
-import { UiManager } from "../ui/uiManager";
+import { UiManager, Events, MouseButton } from "../ui/uiManager";
 
 import { Cached } from "../systems/cached";
 import { Position } from "../systems/spatial";
@@ -58,42 +58,51 @@ function isSelect(selection : Selection): selection is Select
 
 export class SelectionSystem implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private player : Player, ui : UiManager, private renderer : Renderer, private viewport : Viewport)
+  constructor(private entities : EntityContainer, private player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
-    ui.addEventListener("mousedown", (e : Event) =>
+    ui.addEventListener("dragstart", (e : Events.MouseDragStart) =>
     {
-      let mouseEvent = e as MouseEvent;
-      if (mouseEvent.button == 0)
-      {
-        this.dragStart = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
-      }
+      if (e.button === MouseButton.Left)
+        this.dragStart = this.viewport.inverseTransform(e.pos);
     });
 
-    ui.addEventListener("mousemove", (e : Event) =>
+    ui.addEventListener("dragend", (e : Events.MouseDragEnd) =>
     {
-      let mouseEvent = e as MouseEvent;
-      if ((mouseEvent.buttons & 1) != 0)
+      if (e.button === MouseButton.Left)
       {
-        this.dragCurrent = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
-      }
-    });
-
-    ui.addEventListener("mouseup", (e : Event) =>
-    {
-      let mouseEvent = e as MouseEvent;
-      if (mouseEvent.button == 0)
-      {
-        if (this.dragCurrent)
-        {
-          this.selection = new Select(new Box(this.dragStart, this.dragCurrent));
-        }
-        else
-        {
-          this.selection = new Unselect();
-        }
-
+        this.selection = new Select(new Box(this.viewport.transform(this.dragStart), this.dragCurrent));
         this.dragStart = null;
         this.dragCurrent = null;
+      }
+    });
+
+    ui.addEventListener("click", (e : Events.MouseClick) =>
+    {
+      if (e.button === MouseButton.Left)
+        this.selection = new Unselect();
+    });
+
+    ui.addEventListener("entityclick", (evt : Events.EntityClick) =>
+    {
+      if (evt.button === MouseButton.Left)
+      {
+        this.entities.forEachEntity([Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
+        {
+          let [selectable, controlled] = components as [Selectable, Controlled];
+          if (controlled.player !== this.player)
+            return;
+
+          let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];
+
+          if (!selected && e === evt.entities[0])
+          {
+            e.addComponent(Selected.t, new Selected());
+          }
+          else if (selected && e !== evt.entities[0])
+          {
+            e.removeComponent(Selected.t);
+          }
+        });
       }
     });
   }
@@ -141,9 +150,14 @@ export class SelectionSystem implements RenderSystem
       this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), SelectionSystem.selectedBoxProps);
     });
 
-    if (this.dragStart && this.dragCurrent)
+    if (this.dragStart)
     {
-      this.renderer.drawRect(this.dragStart, this.dragCurrent, SelectionSystem.selectionBoxProps);
+      const mousePos = this.ui.mousePosition();
+      if (mousePos)
+        this.dragCurrent = this.ui.mousePosition().clone();
+
+      if (this.dragCurrent)
+        this.renderer.drawRect(this.viewport.transform(this.dragStart), this.dragCurrent, SelectionSystem.selectionBoxProps);
     }
   }
 

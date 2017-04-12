@@ -1,7 +1,7 @@
 import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
-import { UiManager } from "../ui/uiManager";
+import { UiManager, MouseButton, Events } from "../ui/uiManager";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
@@ -15,35 +15,29 @@ export class OrderAttack implements RenderSystem
 {
   constructor(private entities : EntityContainer, private player : Player, ui : UiManager, viewport : Viewport)
   {
-    ui.addEventListener("mouseup", (e : Event) =>
+    ui.addEventListener("entityclick", (event : Events.EntityClick) =>
     {
-      let mouseEvent = e as MouseEvent;
-      if (mouseEvent.button == 2)
+      if (event.button === MouseButton.Right)
       {
-        let clickPos = new Vec2(mouseEvent.clientX, mouseEvent.clientY);
-        let target : Targetable = null;
-        this.entities.forEachEntity([Position.t, Targetable.t, Controlled.t], (e : Entity, components : any[]) =>
+        for (let entity of event.entities)
         {
-          let [position, targetable, controlled] = components as [Position, Targetable, Controlled];
+          let components = entity.getComponents([Controlled.t, Targetable.t]);
+          if (!components)
+            continue;
+
+          let [controlled, targetable] = components as [Controlled, Targetable];
           if (controlled.player !== this.player)
           {
-            let [cachedPos] = e.getOptionalComponents([Cached.t + Position.t]) as [Cached<Position>];
-            let pos = viewport.transform(interpolatePosition(position, cachedPos, this.interp));
-            if (distance(pos, clickPos) < 10)
+            this.entities.forEachEntity([Selected.t, AttackTarget.t, Controlled.t], (e : Entity, components : any[]) =>
             {
-              target = targetable;
-            }
+              let [, attackTarget, controlled] = components as [Selected, AttackTarget, Controlled];
+              if (controlled.player === this.player)
+                attackTarget.target = targetable;
+            });
+            break;
           }
-        });
-
-        this.entities.forEachEntity([Selected.t, AttackTarget.t, Controlled.t], (e : Entity, components : any[]) =>
-        {
-          let [, attackTarget, controlled] = components as [Selected, AttackTarget, Controlled];
-          if (controlled.player === this.player)
-            attackTarget.target = target;
-        });
+        }
       }
-      e.preventDefault();
     });
   }
 

@@ -7,6 +7,7 @@ import { Selectable } from "../systems/selection";
 import { Named } from "../systems/named";
 import { Controlled, Player } from "../systems/playable";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
+import { Clickable } from "../systems/clickable";
 
 import { Shape } from "../renderer/shape";
 import { Vec2 } from "../vec2/vec2";
@@ -77,6 +78,9 @@ export class Static
       )
       .addComponent(AttackTarget.t,
         new AttackTarget()
+      )
+      .addComponent(Clickable.t,
+        new Clickable()
       );
   };
 };

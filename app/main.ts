@@ -15,6 +15,5 @@ resize();
 window.addEventListener("resize", resize);
 content.appendChild(canvas);
 let renderer = new Renderer(canvas);
-let ui = new UiManager(content, canvas);
-let game = new Game(ui, renderer);
+let game = new Game(content, canvas, renderer);
 game.start(60);
