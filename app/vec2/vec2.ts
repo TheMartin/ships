@@ -90,12 +90,22 @@ export class Vec2
     return new Vec2(Math.random(), Math.random());
   }
 
+  static fromAngle(a : number) : Vec2
+  {
+    return new Vec2(Math.sin(a), -Math.cos(a));
+  }
+
   static readonly zero : Vec2 = new Vec2(0, 0);
 };
 
 export function dot(v1 : Vec2, v2 : Vec2) : number
 {
   return v1.x * v2.x + v1.y * v2.y;
+};
+
+export function cross(v1 : Vec2, v2 : Vec2) : number
+{
+  return v1.x * v2.y - v1.y * v2.x;
 };
 
 export function norm2(v : Vec2) : number

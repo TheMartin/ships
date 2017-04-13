@@ -2,19 +2,17 @@ import { Entity, EntityContainer } from "../ecs/entities";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 
-import { Cached } from "../systems/cached";
-import { Position, Rotation } from "../systems/spatial";
 import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
-import { MoveTo, MoveToTarget } from "../systems/moveTo";
+import { MoveKinematic } from "../systems/moveKinematic";
+import { MoveTo } from "../systems/moveTo";
 import { ChooseRandomMoveTarget } from "../systems/randomMoveTarget";
 import { RenderMoveTarget } from "../systems/renderMoveTarget";
 import { OrderMove } from "../systems/orderMove";
-import { Selectable, SelectionSystem } from "../systems/selection";
-import { RenderShape, ShapeRenderer } from "../systems/shapeRenderer";
+import { SelectionSystem } from "../systems/selection";
+import { ShapeRenderer } from "../systems/shapeRenderer";
 import { StatusWindow } from "../systems/statusWindow";
 import { ViewportController } from "../systems/viewportController";
 import { Player, PlayerType } from "../systems/playable";
-import { AttackTarget, Targetable } from "../systems/attackTarget";
 import { RenderAttackTarget } from "../systems/renderAttackTarget";
 import { OrderAttack } from "../systems/orderAttack";
 import { UpdateClickable } from "../systems/clickable";
@@ -42,7 +40,8 @@ export class Game
       new CachePosition(this.entityContainer),
       new CacheRotation(this.entityContainer),
       new ChooseRandomMoveTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
-      new MoveTo(this.entityContainer, 50)
+      new MoveTo(this.entityContainer, 50, Math.PI / 5, 10),
+      new MoveKinematic(this.entityContainer)
     ];
 
     this.viewport = new Viewport(new Vec2(0, 0), 0, 1);

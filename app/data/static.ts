@@ -1,6 +1,7 @@
 import { Entity } from "../ecs/entities";
 import { Cached } from "../systems/cached";
 import { Position, Rotation } from "../systems/spatial";
+import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { RenderShape } from "../systems/shapeRenderer";
 import { MoveToTarget } from "../systems/moveTo";
 import { Selectable } from "../systems/selection";
@@ -51,6 +52,12 @@ export class Static
       )
       .addComponent(Rotation.t,
         new Rotation(rot)
+      )
+      .addComponent(Velocity.t,
+        new Velocity(new Vec2(0, 0))
+      )
+      .addComponent(AngularVelocity.t,
+        new AngularVelocity(0)
       )
       .addComponent(RenderShape.t,
         new RenderShape(shape)
