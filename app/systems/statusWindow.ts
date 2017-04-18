@@ -3,15 +3,17 @@ import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager } from "../ui/uiManager";
 import { Selected } from "../systems/selection";
 import { Cached } from "../systems/cached";
-import { Position } from "../systems/spatial";
-import { interpolatePosition } from "../systems/cacheSpatial";
+import { Position, Rotation } from "../systems/spatial";
+import { interpolatePosition, interpolateRotation } from "../systems/cacheSpatial";
+import { Velocity } from "../systems/kinematic";
 import { MoveToTarget } from "../systems/moveTo";
 import { Named } from "../systems/named";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
 
 import { VdomNode, VdomElement, createElement, updateElementChildren } from "../vdom/vdom";
 
-import { Vec2, lerp } from "../vec2/vec2";
+import { Vec2, lerp, norm } from "../vec2/vec2";
+import { wrapAngle } from "../util/angle";
 
 function positionToString(pos : Vec2) : string
 {
@@ -31,17 +33,29 @@ export class StatusWindow implements RenderSystem
     let elem = VdomElement.create("div", {"class" : "window"}, []);
     this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
-      let [name, position, cachedPos, moveTarget, attackTarget] = e.getOptionalComponents(
-        [Named.t, Position.t, Cached.t + Position.t, MoveToTarget.t, AttackTarget.t]
-        ) as [Named, Position, Cached<Position>, MoveToTarget, AttackTarget];
+      let [name, position, cachedPos, rotation, cachedRot, velocity, moveTarget, attackTarget] = e.getOptionalComponents(
+        [Named.t, Position.t, Cached.t + Position.t, Rotation.t, Cached.t + Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t]
+        ) as [Named, Position, Cached<Position>, Rotation, Cached<Rotation>, Velocity, MoveToTarget, AttackTarget];
 
       let elems : VdomElement[] = [];
 
       if (name)
         elems.push(VdomElement.create("span", {"class" : "name"}, [name.name]));
 
-      if (position)
-        elems.push(VdomElement.create("span", {"class" : "pos"}, [positionToString(interpolatePosition(position, cachedPos, interp))]));
+      if (position || rotation || velocity)
+      {
+        let msgParts : string[] = [];
+        if (position)
+          msgParts.push(positionToString(interpolatePosition(position, cachedPos, interp)));
+
+        if (rotation)
+          msgParts.push((180 * wrapAngle(interpolateRotation(rotation, cachedRot, interp)) / Math.PI).toFixed() + "°");
+
+        if (velocity)
+          msgParts.push(norm(velocity.vel).toFixed());
+
+        elems.push(VdomElement.create("span", {"class" : "pos"}, [msgParts.join(" | ")]));
+      }
 
       if (moveTarget && moveTarget.target)
         elems.push(VdomElement.create("span", {"class" : "tgt"}, [positionToString(moveTarget.target)]));

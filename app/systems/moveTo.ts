@@ -14,41 +14,30 @@ export class MoveToTarget
 
 export class MoveTo implements System
 {
-  constructor(private entities : EntityContainer, private speed : number, private angularSpeed : number, private acceleration : number) {}
+  constructor(private entities : EntityContainer, private speed : number, private angularSpeed : number) {}
 
   update(dt : number) : void
   {
     this.entities.forEachEntity([Position.t, Rotation.t, Velocity.t, AngularVelocity.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {
       let [position, rotation, velocity, angularVelocity, target] = components as [Position, Rotation, Velocity, AngularVelocity, MoveToTarget];
-      const speed = norm(velocity.vel);
-
-      if (!target.target)
+      if (target.target)
       {
-        if (speed > 0)
+        const toTarget = target.target.clone().subtract(position.pos);
+        if (norm(toTarget) > 0.25)
         {
-          velocity.vel.subtract(velocity.vel.normalized().multiply( Math.min(speed, this.acceleration * dt)) );
+          velocity.vel = toTarget.normalized().multiply(this.speed);
+          angularVelocity.vel = Math.sign(angleDiff(rotation.angle, toTarget.angle())) * this.angularSpeed;
         }
-        angularVelocity.vel = 0;
-        return;
-      }
-
-      const toTarget = target.target.clone().subtract(position.pos);
-      const distanceToTarget = norm(toTarget);
-      if (distanceToTarget > 0.25)
-      {
-        const toTargetAngle = angleDiff(rotation.angle, toTarget.angle());
-        const safeSpeed = Math.sqrt(2 * distanceToTarget * this.acceleration);
-        const maxSpeed = Math.max(0, this.speed * Math.cos( toTargetAngle ));
-        const targetSpeed = Math.min(safeSpeed, maxSpeed);
-        const dV = this.acceleration * dt;
-
-        velocity.vel = Vec2.fromAngle(rotation.angle).multiply(clamp(targetSpeed, speed - dV, speed + dV));
-        angularVelocity.vel = Math.sign(toTargetAngle) * this.angularSpeed;
+        else
+        {
+          target.target = null;
+        }
       }
       else
       {
-        target.target = null;
+        velocity.vel = Vec2.zero.clone();
+        angularVelocity.vel = 0;
       }
     });
   }
