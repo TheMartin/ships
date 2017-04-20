@@ -46,7 +46,7 @@ export class Game
       new CachePosition(this.entityContainer),
       new CacheRotation(this.entityContainer),
       new ChooseRandomMoveTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
-      new MoveTo(this.entityContainer, 50, Math.PI / 5),
+      new MoveTo(this.entityContainer, 50, Math.PI / 3),
       new MoveProjectiles(this.entityContainer),
       new Shooting(this.entityContainer),
       new MoveKinematic(this.entityContainer),
