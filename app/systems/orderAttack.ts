@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, MouseButton, Events } from "../ui/uiManager";
@@ -41,10 +42,7 @@ export class OrderAttack implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number) : void
+  update(dt : number, interp : number, deferred : Deferred) : void
   {
-    this.interp = interp;
   }
-
-  private interp : number = 0;
 };

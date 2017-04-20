@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Cached } from "../systems/cached";
@@ -9,7 +10,7 @@ export class SineMovement implements System
   {
   }
 
-  update(dt : number) : void
+  update(dt : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
     {

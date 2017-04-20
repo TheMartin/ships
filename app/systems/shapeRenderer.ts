@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";
@@ -17,7 +18,7 @@ export class ShapeRenderer implements RenderSystem
 {
   constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number) : void
+  update(dt : number, interp : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([RenderShape.t, Position.t], (e : Entity, components : any[]) =>
     {

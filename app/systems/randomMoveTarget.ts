@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { MoveToTarget } from "../systems/moveTo";
 import { Controlled, Player } from "../systems/playable";
@@ -11,7 +12,7 @@ export class ChooseRandomMoveTarget implements System
     this.size = max.clone().subtract(min);
   }
 
-  update(dt : number) : void
+  update(dt : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([MoveToTarget.t, Controlled.t], (e : Entity, components : any[]) =>
     {

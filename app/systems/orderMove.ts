@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
@@ -26,7 +27,7 @@ export class OrderMove implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number) : void
+  update(dt : number, interp : number, deferred : Deferred) : void
   {
   }
 

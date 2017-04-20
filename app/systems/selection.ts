@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
@@ -107,7 +108,7 @@ export class SelectionSystem implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number) : void
+  update(dt : number, interp : number, deferred : Deferred) : void
   {
     if (this.selection)
     {
@@ -164,7 +165,7 @@ export class SelectionSystem implements RenderSystem
   private dragStart : Vec2;
   private dragCurrent : Vec2;
   private selection : Select | Unselect;
-  private static readonly selectedBoxProps : RenderProps = { stroke : "rgb(0, 255, 0)" };
+  private static readonly selectedBoxProps : RenderProps = { stroke : "rgb(0, 255, 0)", lineWidth: 3 };
   private static readonly selectionBoxProps : RenderProps =
     {
       stroke : "rgb(0, 255, 0)",

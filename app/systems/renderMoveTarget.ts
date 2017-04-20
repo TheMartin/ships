@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { MoveToTarget } from "../systems/moveTo";
@@ -12,7 +13,7 @@ export class RenderMoveTarget implements RenderSystem
 {
   constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number) : void
+  update(dt : number, interp : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([Selected.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {

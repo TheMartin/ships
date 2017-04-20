@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 
@@ -106,20 +107,24 @@ export class Game
 
   update(dt : number) : void
   {
+    let deferred = new Deferred();
     for (let system of this.updateSystems)
     {
-      system.update(dt);
+      system.update(dt, deferred);
     }
+    deferred.flush();
   }
 
   draw(dt : number, interp : number) : void
   {
     this.renderer.clear();
+    let deferred = new Deferred();
 
     for (let system of this.renderSystems)
     {
-      system.update(dt, interp);
+      system.update(dt, interp, deferred);
     }
+    deferred.flush();
   }
 
   private lastUpdate : number = 0;

@@ -1,5 +1,6 @@
 import { Entity, EntityContainer } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
+import { Deferred } from "../ecs/deferred";
 import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
 import { Selected } from "../systems/selection";
@@ -12,7 +13,7 @@ export class RenderAttackTarget implements RenderSystem
 {
   constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number) : void
+  update(dt : number, interp : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([Selected.t, AttackTarget.t], (e : Entity, components : any[]) =>
     {

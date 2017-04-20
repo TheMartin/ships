@@ -1,4 +1,5 @@
 import { Entity, EntityContainer } from "../ecs/entities";
+import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
@@ -16,7 +17,7 @@ export class MoveTo implements System
 {
   constructor(private entities : EntityContainer, private speed : number, private angularSpeed : number) {}
 
-  update(dt : number) : void
+  update(dt : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([Position.t, Rotation.t, Velocity.t, AngularVelocity.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {
