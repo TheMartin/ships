@@ -12,7 +12,7 @@ import { interceptVector } from "../util/intercept";
 
 export class Armed
 {
-  constructor(public cooldown : number, public range : number, public projectileSpeed : number) {}
+  constructor(public cooldown : number, public range : number, public projectileSpeed : number, public damage : number) {}
   public cooldownRemaining : number = 0;
   static readonly t : string = "Armed";
 };
@@ -59,7 +59,7 @@ export class Shooting implements System
           [Cached.t + Rotation.t] : new Cached<Rotation>(),
           [Velocity.t] : new Velocity(initialVelocity),
           [TracerEffect.t] : new TracerEffect(),
-          [Projectile.t] : new Projectile(target.target, armed.range, armed.projectileSpeed)
+          [Projectile.t] : new Projectile(target.target, armed.range, armed.projectileSpeed, armed.damage)
         });
 
         this.entities.addEntity(projectile);

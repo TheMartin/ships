@@ -19,7 +19,9 @@ import { OrderAttack } from "../systems/orderAttack";
 import { UpdateClickable } from "../systems/clickable";
 import { Shooting } from "../systems/armed";
 import { MoveProjectiles } from "../systems/projectile";
+import { CheckDestroyed } from "../systems/damageable";
 import { RenderTracer } from "../systems/tracerEffect";
+import { RenderHealthBar } from "../systems/renderHealthBar";
 
 import { UiManager } from "../ui/uiManager";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -47,7 +49,8 @@ export class Game
       new MoveTo(this.entityContainer, 50, Math.PI / 5),
       new MoveProjectiles(this.entityContainer),
       new Shooting(this.entityContainer),
-      new MoveKinematic(this.entityContainer)
+      new MoveKinematic(this.entityContainer),
+      new CheckDestroyed(this.entityContainer)
     ];
 
     this.viewport = new Viewport(new Vec2(0, 0), 0, 1);
@@ -63,6 +66,7 @@ export class Game
       new RenderAttackTarget(this.entityContainer, renderer, this.viewport),
       new ShapeRenderer(this.entityContainer, renderer, this.viewport),
       new RenderTracer(this.entityContainer, renderer, this.viewport),
+      new RenderHealthBar(this.entityContainer, renderer, this.viewport),
       new StatusWindow(this.entityContainer, this.ui)
     ];
   }

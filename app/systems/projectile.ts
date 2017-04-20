@@ -4,13 +4,14 @@ import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity } from "../systems/kinematic";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
+import { Damageable } from "../systems/damageable";
 import { Vec2, distance } from "../vec2/vec2";
 import { angleDiff } from "../util/angle";
 import { interceptVector } from "../util/intercept";
 
 export class Projectile
 {
-  constructor(public target : Targetable, range : number, public speed : number)
+  constructor(public target : Targetable, range : number, public speed : number, public damage : number)
   {
     this.lifetime = range / speed;
   }
@@ -45,8 +46,12 @@ export class MoveProjectiles implements System
         return;
 
       let [targetPos, targetVel] = targetEntity.getComponents([Position.t, Velocity.t]) as [Position, Velocity];
+      let [damageable] = targetEntity.getOptionalComponents([Damageable.t]) as [Damageable];
       if (distance(targetPos.pos, position.pos) < 5)
       {
+        if (damageable)
+          damageable.hitpoints -= projectile.damage;
+
         deferred.push(() => { this.entities.removeEntity(e); });
         return;
       }

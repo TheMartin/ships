@@ -10,6 +10,7 @@ import { Velocity } from "../systems/kinematic";
 import { MoveToTarget } from "../systems/moveTo";
 import { Named } from "../systems/named";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
+import { Damageable } from "../systems/damageable";
 
 import { VdomNode, VdomElement, createElement, updateElementChildren } from "../vdom/vdom";
 
@@ -34,14 +35,17 @@ export class StatusWindow implements RenderSystem
     let elem = VdomElement.create("div", {"class" : "window"}, []);
     this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
-      let [name, position, cachedPos, rotation, cachedRot, velocity, moveTarget, attackTarget] = e.getOptionalComponents(
-        [Named.t, Position.t, Cached.t + Position.t, Rotation.t, Cached.t + Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t]
-        ) as [Named, Position, Cached<Position>, Rotation, Cached<Rotation>, Velocity, MoveToTarget, AttackTarget];
+      let [name, position, cachedPos, rotation, cachedRot, velocity, moveTarget, attackTarget, damageable] = e.getOptionalComponents(
+        [Named.t, Position.t, Cached.t + Position.t, Rotation.t, Cached.t + Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
+        ) as [Named, Position, Cached<Position>, Rotation, Cached<Rotation>, Velocity, MoveToTarget, AttackTarget, Damageable];
 
       let elems : VdomElement[] = [];
 
       if (name)
         elems.push(VdomElement.create("span", {"class" : "name"}, [name.name]));
+
+      if (damageable)
+        elems.push(VdomElement.create("span", {"class" : "hp"}, [damageable.hitpoints.toFixed() + "/" + damageable.maxHitpoints.toFixed()]));
 
       if (position || rotation || velocity)
       {

@@ -26,7 +26,7 @@ body {
   width: 100%;
 }
 
-.name, .pos, .tgt, .atk {
+.name, .pos, .tgt, .atk, .hp {
   padding: 5px;
 }
 
@@ -35,12 +35,13 @@ body {
   font-size: 130%;
 }
 
-.pos {
+.pos, .tgt, .hp {
   color: #ffffff;
 }
 
-.tgt {
-  color: #ffffff;
+.hp:before {
+  content : "HP: ";
+  color: #808080;
 }
 
 .tgt:before {
