@@ -9,6 +9,7 @@ import { Named } from "../systems/named";
 import { Controlled, Player } from "../systems/playable";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
 import { Clickable } from "../systems/clickable";
+import { Armed } from "../systems/armed";
 
 import { Shape } from "../renderer/shape";
 import { Vec2 } from "../vec2/vec2";
@@ -88,6 +89,9 @@ export class Static
       )
       .addComponent(Clickable.t,
         new Clickable()
+      )
+      .addComponent(Armed.t,
+        new Armed(0.75, 1000, 350)
       );
   };
 };

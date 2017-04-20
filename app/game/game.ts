@@ -17,6 +17,9 @@ import { Player, PlayerType } from "../systems/playable";
 import { RenderAttackTarget } from "../systems/renderAttackTarget";
 import { OrderAttack } from "../systems/orderAttack";
 import { UpdateClickable } from "../systems/clickable";
+import { Shooting } from "../systems/armed";
+import { MoveProjectiles } from "../systems/projectile";
+import { RenderTracer } from "../systems/tracerEffect";
 
 import { UiManager } from "../ui/uiManager";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -42,6 +45,8 @@ export class Game
       new CacheRotation(this.entityContainer),
       new ChooseRandomMoveTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
       new MoveTo(this.entityContainer, 50, Math.PI / 5),
+      new MoveProjectiles(this.entityContainer),
+      new Shooting(this.entityContainer),
       new MoveKinematic(this.entityContainer)
     ];
 
@@ -57,6 +62,7 @@ export class Game
       new RenderMoveTarget(this.entityContainer, renderer, this.viewport),
       new RenderAttackTarget(this.entityContainer, renderer, this.viewport),
       new ShapeRenderer(this.entityContainer, renderer, this.viewport),
+      new RenderTracer(this.entityContainer, renderer, this.viewport),
       new StatusWindow(this.entityContainer, this.ui)
     ];
   }
