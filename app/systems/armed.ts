@@ -51,28 +51,16 @@ export class Shooting implements System
         let intercept = interceptVector(targetPos.pos, targetVel ? targetVel.vel : Vec2.zero, position.pos, armed.projectileSpeed);
         let initialVelocity = intercept ? intercept : toTarget.normalized().multiply(armed.projectileSpeed);
 
-        let projectile = new Entity()
-          .addComponent(Position.t,
-            new Position(position.pos.clone())
-          )
-          .addComponent(Cached.t + Position.t,
-            new Cached<Position>()
-          )
-          .addComponent(Rotation.t,
-            new Rotation(initialVelocity.angle())
-          )
-          .addComponent(Cached.t + Rotation.t,
-            new Cached<Rotation>()
-          )
-          .addComponent(Velocity.t,
-            new Velocity(initialVelocity)
-          )
-          .addComponent(TracerEffect.t,
-            new TracerEffect()
-          )
-          .addComponent(Projectile.t,
-            new Projectile(target.target, armed.range, armed.projectileSpeed)
-          );
+        let projectile = new Entity(
+        {
+          [Position.t] : new Position(position.pos.clone()),
+          [Cached.t + Position.t] : new Cached<Position>(),
+          [Rotation.t] : new Rotation(initialVelocity.angle()),
+          [Cached.t + Rotation.t] : new Cached<Rotation>(),
+          [Velocity.t] : new Velocity(initialVelocity),
+          [TracerEffect.t] : new TracerEffect(),
+          [Projectile.t] : new Projectile(target.target, armed.range, armed.projectileSpeed)
+        });
 
         this.entities.addEntity(projectile);
       });

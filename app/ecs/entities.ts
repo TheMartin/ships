@@ -1,7 +1,8 @@
 export class Entity
 {
-  constructor()
+  constructor( components : { [name : string] : Object } = { } )
   {
+    this.components = components;
     this.id = Entity.Count;
     Entity.Count += 1;
   }

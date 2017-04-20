@@ -47,51 +47,22 @@ export class Static
 
   static makeShip(pos : Vec2, rot : number, name : string, shape : Shape, player : Player)
   {
-    return new Entity()
-      .addComponent(Position.t,
-        new Position(pos)
-      )
-      .addComponent(Rotation.t,
-        new Rotation(rot)
-      )
-      .addComponent(Velocity.t,
-        new Velocity(new Vec2(0, 0))
-      )
-      .addComponent(AngularVelocity.t,
-        new AngularVelocity(0)
-      )
-      .addComponent(RenderShape.t,
-        new RenderShape(shape)
-      )
-      .addComponent(Cached.t + Position.t,
-        new Cached<Position>()
-      )
-      .addComponent(Cached.t + Rotation.t,
-        new Cached<Rotation>()
-      )
-      .addComponent(MoveToTarget.t,
-        new MoveToTarget()
-      )
-      .addComponent(Selectable.t,
-        new Selectable()
-      )
-      .addComponent(Named.t,
-        new Named(name)
-      )
-      .addComponent(Controlled.t,
-        new Controlled(player)
-      )
-      .addComponent(Targetable.t,
-        new Targetable()
-      )
-      .addComponent(AttackTarget.t,
-        new AttackTarget()
-      )
-      .addComponent(Clickable.t,
-        new Clickable()
-      )
-      .addComponent(Armed.t,
-        new Armed(0.75, 1000, 350)
-      );
+    return new Entity({
+      [Position.t] : new Position(pos),
+      [Rotation.t] : new Rotation(rot),
+      [Velocity.t] : new Velocity(new Vec2(0, 0)),
+      [AngularVelocity.t] : new AngularVelocity(0),
+      [RenderShape.t] : new RenderShape(shape),
+      [Cached.t + Position.t] : new Cached<Position>(),
+      [Cached.t + Rotation.t] : new Cached<Rotation>(),
+      [MoveToTarget.t] : new MoveToTarget(),
+      [Selectable.t] : new Selectable(),
+      [Named.t] : new Named(name),
+      [Controlled.t] : new Controlled(player),
+      [Targetable.t] : new Targetable(),
+      [AttackTarget.t] : new AttackTarget(),
+      [Clickable.t] : new Clickable(),
+      [Armed.t] : new Armed(0.75, 1000, 350)
+    });
   };
 };
