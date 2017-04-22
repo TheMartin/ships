@@ -8,7 +8,7 @@
   },
   "keywords": [],
   "author": "TheMartin",
-  "license": "GPLv3",
+  "license": "MIT",
   "dependencies": {
     "core-js": "^2.4.1"
   },
