@@ -45,6 +45,12 @@ export namespace Events
     pos : Vec2;
     delta : Vec2;
   };
+
+  export class MouseScroll
+  {
+    pos : Vec2;
+    delta : number;
+  };
 }
 
 type EventListener<EventType> = (event : EventType) => void;
@@ -86,6 +92,11 @@ export class UiManager
         this.invokeListeners("dragend", { pos, button });
       }
       this.mouseButtons[button] = ButtonState.Up;
+    });
+
+    canvas.addEventListener("wheel", (e : WheelEvent) =>
+    {
+      this.invokeListeners("wheel", { pos : this.mousePos ? this.mousePos.clone() : null, delta : Math.sign(e.deltaY) });
     });
 
     rootElement.addEventListener("mouseenter", (e : MouseEvent) =>
@@ -154,6 +165,11 @@ export class UiManager
     return this.canvas.height;
   }
 
+  canvasDimensions() : Vec2
+  {
+    return new Vec2(this.canvasWidth(), this.canvasHeight());
+  }
+
   mousePosition() : Vec2
   {
     return this.mousePos;
@@ -175,6 +191,7 @@ export class UiManager
     click : [],
     mousemove : [],
     dragstart : [],
-    dragend : []
+    dragend : [],
+    wheel : []
   };
 };

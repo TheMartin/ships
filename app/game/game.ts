@@ -58,7 +58,7 @@ export class Game
     this.renderSystems =
     [
       new UpdateClickable(this.entityContainer, this.viewport),
-      new ViewportController(this.ui, 1000, this.viewport),
+      new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.entityContainer, player, this.ui, renderer, this.viewport),
       new OrderMove(this.entityContainer, player, this.ui, this.viewport),
       new OrderAttack(this.entityContainer, player, this.ui, this.viewport),

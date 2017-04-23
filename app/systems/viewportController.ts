@@ -7,7 +7,7 @@ import { Vec2, lerp } from "../vec2/vec2";
 
 export class ViewportController implements RenderSystem
 {
-  constructor(private ui : UiManager, private scrollSpeed : number, private viewport : Viewport)
+  constructor(private ui : UiManager, private scrollSpeed : number, private scaleRatio : number, private viewport : Viewport)
   {
     ui.addEventListener("dragstart", (e : Events.MouseDragStart) =>
     {
@@ -22,6 +22,14 @@ export class ViewportController implements RenderSystem
     {
       if (e.button === MouseButton.Right)
         this.dragging = false;
+    });
+
+    ui.addEventListener("wheel", (e : Events.MouseScroll) =>
+    {
+      const pos = e.pos ? e.pos : this.ui.canvasDimensions().multiply(0.5);
+      const rescale = Math.pow(this.scaleRatio, -e.delta);
+      this.viewport.scale *= rescale;
+      this.viewport.pos = pos.add(this.viewport.pos.clone().subtract(pos).multiply(rescale));
     });
   }
 
