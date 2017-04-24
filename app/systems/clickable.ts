@@ -9,6 +9,7 @@ import { Vec2 } from "../vec2/vec2";
 
 export class Clickable
 {
+  constructor(public radius : number) {}
   pos : Vec2;
   static readonly t : string = "Clickable";
 };

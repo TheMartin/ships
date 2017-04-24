@@ -76,7 +76,7 @@ export class UiManager
         const entities = this.entities.filterEntities([Clickable.t], (e : Entity, components : any[]) =>
         {
           let [clickable] = components as [Clickable];
-          return clickable.pos && distance(clickable.pos, pos) < 5;
+          return clickable.pos && distance(clickable.pos, pos) < clickable.radius;
         });
         if (entities.length > 0)
         {

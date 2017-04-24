@@ -62,7 +62,7 @@ export class Static
       [Controlled.t] : new Controlled(player),
       [Targetable.t] : new Targetable(),
       [AttackTarget.t] : new AttackTarget(),
-      [Clickable.t] : new Clickable(),
+      [Clickable.t] : new Clickable(15),
       [Armed.t] : new Armed(0.75, 1000, 350, 20),
       [Damageable.t] : new Damageable(300)
     });
