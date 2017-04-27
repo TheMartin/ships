@@ -27,25 +27,29 @@ export class Shooting implements System
     {
       let [position, target, armed] = components as [Position, AttackTarget, Armed];
       armed.cooldownRemaining = armed.cooldownRemaining - dt;
-      if (armed.cooldownRemaining > 0)
-        return;
-
-      let targetEntity = this.entities.findEntity([Targetable.t, Position.t], (e : Entity, components : any[]) =>
+      let delta = 0;
+      if (armed.cooldownRemaining < 0)
       {
-        let [targetable, ] = components as [Targetable, Position];
-        return targetable === target.target;
-      });
-      if (!targetEntity)
+        delta = -armed.cooldownRemaining;
+        armed.cooldownRemaining = 0;
+      }
+      else if (armed.cooldownRemaining > 0)
         return;
 
-      let targetPos = targetEntity.components[Position.t] as Position;
+      if (!this.entities.containsEntity(target.target))
+      {
+        target.target = null;
+        return;
+      }
+
+      let targetPos = target.target.components[Position.t] as Position;
       let toTarget = targetPos.pos.clone().subtract(position.pos);
       if (norm(toTarget) > armed.range)
         return;
 
-      let [targetVel] = targetEntity.getOptionalComponents([Velocity.t]) as [Velocity];
+      let [targetVel] = target.target.getOptionalComponents([Velocity.t]) as [Velocity];
 
-      armed.cooldownRemaining = Math.max(armed.cooldown + armed.cooldownRemaining, 0);
+      armed.cooldownRemaining = Math.max(armed.cooldown - delta, 0);
       deferred.push(() =>
       {
         let intercept = interceptVector(targetPos.pos, targetVel ? targetVel.vel : Vec2.zero, position.pos, armed.projectileSpeed);

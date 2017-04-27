@@ -11,10 +11,14 @@ import { interceptVector } from "../util/intercept";
 
 export class Projectile
 {
-  constructor(public target : Targetable, range : number, public speed : number, public damage : number)
+  constructor(target : Entity, range : number, public speed : number, public damage : number)
   {
+    if (target.components[Targetable.t])
+      this.target = target;
+
     this.lifetime = range / speed;
   }
+  public target : Entity = null;
   public lifetime : number = 0;
   static readonly t : string = "Projectile";
 };
@@ -36,17 +40,14 @@ export class MoveProjectiles implements System
 
       projectile.lifetime -= dt;
 
-      let targetEntity = this.entities.findEntity([Targetable.t, Position.t, Velocity.t], (e : Entity, components : any[]) =>
+      if (!this.entities.containsEntity(projectile.target))
       {
-        let [targetable, ,] = components as [Targetable, Position, Velocity];
-        return targetable === projectile.target;
-      });
-
-      if (!targetEntity)
+        projectile.target = null;
         return;
+      }
 
-      let [targetPos, targetVel] = targetEntity.getComponents([Position.t, Velocity.t]) as [Position, Velocity];
-      let [damageable] = targetEntity.getOptionalComponents([Damageable.t]) as [Damageable];
+      let [targetPos, targetVel] = projectile.target.getComponents([Position.t, Velocity.t]) as [Position, Velocity];
+      let [damageable] = projectile.target.getOptionalComponents([Damageable.t]) as [Damageable];
       if (distance(targetPos.pos, position.pos) < 5)
       {
         if (damageable)

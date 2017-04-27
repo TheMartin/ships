@@ -33,7 +33,7 @@ export class OrderAttack implements RenderSystem
             {
               let [, attackTarget, controlled] = components as [Selected, AttackTarget, Controlled];
               if (controlled.player === this.player)
-                attackTarget.target = targetable;
+                attackTarget.setTarget(entity);
             });
             break;
           }

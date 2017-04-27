@@ -60,6 +60,11 @@ export class EntityContainer
     this.entities[e.id] = e;
   }
 
+  containsEntity(e : Entity) : boolean
+  {
+    return e !== null && e.id in this.entities;
+  }
+
   removeEntity(e : Entity) : void
   {
     delete this.entities[e.id];
