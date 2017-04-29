@@ -22,57 +22,68 @@ function positionToString(pos : Vec2) : string
   return pos.x.toFixed() + " : " + pos.y.toFixed();
 };
 
+function spatialInformation(position : Position, cachedPos : Cached<Position>, rotation : Rotation, cachedRot : Cached<Rotation>, interp : number, velocity : Velocity) : string
+{
+  let msgParts : string[] = [];
+  if (position)
+    msgParts.push(positionToString(interpolatePosition(position, cachedPos, interp)));
+
+  if (rotation)
+    msgParts.push((180 * wrapAngle(interpolateRotation(rotation, cachedRot, interp)) / Math.PI).toFixed() + "°");
+
+  if (velocity)
+    msgParts.push(norm(velocity.vel).toFixed());
+
+  return msgParts.join(" | ");
+};
+
+function entityName(e : Entity) : string
+{
+  let [name] = e.getOptionalComponents([Named.t]) as [Named];
+  return name ? name.name : null;
+};
+
 export class StatusWindow implements RenderSystem
 {
   constructor(private entities : EntityContainer, private ui : UiManager)
   {
-    this.elem = VdomElement.create("div", {"class" : "window"}, []);
+    this.elem = VdomElement.create("div", {"class" : "window"});
     this.$elem = createElement(this.elem) as HTMLElement;
   }
 
   update(dt : number, interp : number, deferred : Deferred) : void
   {
-    let elem = VdomElement.create("div", {"class" : "window"}, []);
+    let elem = VdomElement.create("div", {"class" : "window"});
     this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
       let [name, position, cachedPos, rotation, cachedRot, velocity, moveTarget, attackTarget, damageable] = e.getOptionalComponents(
         [Named.t, Position.t, Cached.t + Position.t, Rotation.t, Cached.t + Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
         ) as [Named, Position, Cached<Position>, Rotation, Cached<Rotation>, Velocity, MoveToTarget, AttackTarget, Damageable];
 
-      let elems : VdomElement[] = [];
+      elem.children.push(
+        VdomElement.create("div", { "class" : "ship" },
 
-      if (name)
-        elems.push(VdomElement.create("span", {"class" : "name"}, [name.name]));
+          name
+            ? VdomElement.create("span", {"class" : "name"}, name.name)
+            : null,
 
-      if (damageable)
-        elems.push(VdomElement.create("span", {"class" : "hp"}, [damageable.hitpoints.toFixed() + "/" + damageable.maxHitpoints.toFixed()]));
+          damageable
+            ? VdomElement.create("span", {"class" : "hp"}, damageable.hitpoints.toFixed() + "/" + damageable.maxHitpoints.toFixed())
+            : null,
 
-      if (position || rotation || velocity)
-      {
-        let msgParts : string[] = [];
-        if (position)
-          msgParts.push(positionToString(interpolatePosition(position, cachedPos, interp)));
+          position || rotation || velocity
+            ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, cachedPos, rotation, cachedRot, interp, velocity))
+            : null,
 
-        if (rotation)
-          msgParts.push((180 * wrapAngle(interpolateRotation(rotation, cachedRot, interp)) / Math.PI).toFixed() + "°");
+          moveTarget && moveTarget.target
+            ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.target))
+            : null,
 
-        if (velocity)
-          msgParts.push(norm(velocity.vel).toFixed());
-
-        elems.push(VdomElement.create("span", {"class" : "pos"}, [msgParts.join(" | ")]));
-      }
-
-      if (moveTarget && moveTarget.target)
-        elems.push(VdomElement.create("span", {"class" : "tgt"}, [positionToString(moveTarget.target)]));
-
-      if (attackTarget && this.entities.containsEntity(attackTarget.target))
-      {
-        let [targetName] = attackTarget.target.getOptionalComponents([Named.t]) as [Named];
-        if (targetName)
-          elems.push(VdomElement.create("span", {"class" : "atk"}, [targetName.name]));
-      }
-
-      elem.children.push(VdomElement.create("div", {"class" : "ship"}, elems));
+          attackTarget && this.entities.containsEntity(attackTarget.target)
+            ? VdomElement.create("span", {"class" : "atk"}, entityName(attackTarget.target))
+            : null
+        )
+      );
     });
 
     updateElementChildren(this.$elem, elem, this.elem);

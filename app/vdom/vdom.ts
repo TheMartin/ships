@@ -2,7 +2,7 @@ export type VdomNode = string | VdomElement;
 
 interface PropMap
 {
-  [propName : string] : string;
+  [propName : string] : string | EventListenerOrEventListenerObject;
 };
 
 export class VdomElement
@@ -15,15 +15,26 @@ export class VdomElement
   {
   }
 
-  static create(type : string, props : { [propName : string] : string }, children : VdomNode[]) : VdomElement
+  static create(type : string, props : PropMap, ...children : VdomNode[]) : VdomElement
   {
-    return { type, props, children };
+    return { type, props, children : children.filter(value => value !== null) };
   }
 };
 
-function setProp($target : HTMLElement, name : string, value : string) : void
+function isEventProp(name : string) : boolean
 {
-  $target.setAttribute(name, value);
+  return /^on/.test(name);
+}
+
+function extractEventName(name : string) : string
+{
+  return name.slice(2).toLowerCase();
+}
+
+function setProp($target : HTMLElement, name : string, value : string | EventListenerOrEventListenerObject) : void
+{
+  if (!isEventProp(name))
+    $target.setAttribute(name, <string>value);
 }
 
 function setProps($target : HTMLElement, props : PropMap) : void
@@ -31,12 +42,13 @@ function setProps($target : HTMLElement, props : PropMap) : void
   Object.keys(props).forEach(name => setProp($target, name, props[name]));
 }
 
-function removeProp($target : HTMLElement, name : string, oldValue : string) : void
+function removeProp($target : HTMLElement, name : string, oldValue : string | EventListenerOrEventListenerObject) : void
 {
-  $target.removeAttribute(name);
+  if (!isEventProp(name))
+    $target.removeAttribute(name);
 }
 
-function updateProp($target : HTMLElement, name : string, newValue : string, oldValue : string) : void
+function updateProp($target : HTMLElement, name : string, newValue : string | EventListenerOrEventListenerObject, oldValue : string | EventListenerOrEventListenerObject) : void
 {
   if (!newValue)
   {
@@ -54,6 +66,15 @@ function updateProps($target : HTMLElement, newProps : PropMap, oldProps : PropM
   Object.keys(props).forEach(name => updateProp($target, name, newProps[name], oldProps[name]));
 }
 
+function addEventListeners($target : HTMLElement, props : PropMap) : void
+{
+  Object.keys(props).forEach(name =>
+  {
+    if (isEventProp(name))
+      $target.addEventListener(extractEventName(name), <EventListenerOrEventListenerObject>props[name]);
+  });
+}
+
 function isElement(node : VdomNode) : node is VdomElement
 {
   return (<VdomElement>node).type !== undefined;
@@ -69,6 +90,7 @@ export function createElement(node : VdomNode) : Node
   {
     const $element = document.createElement(node.type);
     setProps($element, node.props);
+    addEventListeners($element, node.props);
     node.children.map(createElement).forEach($child => $element.appendChild($child));
     return $element;
   }
