@@ -20,6 +20,46 @@ body {
   cursor: default;
 }
 
+.title {
+  position: absolute;
+  left: 30%;
+  top: 15%;
+  font-family: "Segoe UI";
+  font-size: 300%;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+ul.menu {
+  position: absolute;
+  display: inline-block;
+  left: 20%;
+  bottom: 15%;
+  list-style: none;
+}
+
+.menu li {
+  margin-top: 15px;
+}
+
+.btn {
+  font-family: "Consolas";
+  font-size: 130%;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 3px;
+}
+
+.btn:hover {
+  color: hsl(207,100%,80%);
+  background-color: hsl(207,24%,16%);
+  box-shadow: 0px 0px 7px 7px hsl(207,24%,16%);
+}
+
+.btn:hover:after {
+  content: " <";
+}
+
 .ship {
   margin: 2px;
   display: block;
@@ -40,20 +80,20 @@ body {
 }
 
 .hp:before {
-  content : "HP: ";
+  content: "HP: ";
   color: #808080;
 }
 
 .tgt:before {
-  content : "Moving to ";
+  content: "Moving to ";
   color: #808080;
 }
 
 .atk {
-  color : #ff3333;
+  color: #ff3333;
 }
 
 .atk:before {
-  content : "Attacking ";
+  content: "Attacking ";
   color: #808080;
 }
