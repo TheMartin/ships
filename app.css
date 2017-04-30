@@ -60,6 +60,20 @@ ul.menu {
   content: " <";
 }
 
+.fullscreen {
+  position: absolute;
+  display: inline-block;
+  left: 5%;
+  bottom: 5%;
+  font-family: "Consolas";
+  font-size: 130%;
+  color: #ffffff;
+}
+
+.fullscreen label {
+  margin-left: 10px;
+}
+
 .ship {
   margin: 2px;
   display: block;
