@@ -16,30 +16,24 @@ export class App
             "class" : "btn",
             "onclick" : (e : Event) =>
             {
-              this.runGame(false);
+              this.runGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
               e.preventDefault();
             }
           },
           "Start")
-        ),
-
-        VdomElement.create("li", {},
-          VdomElement.create("a", {
-            "href" : "",
-            "class" : "btn",
-            "onclick" : (e : Event) =>
-            {
-              this.runGame(true);
-              e.preventDefault();
-            }
-          },
-          "Start fullscreen")
         )
       )
     ));
 
     this.$root.appendChild(createElement(
       VdomElement.create("div", {"class" : "title"}, "Ships")
+    ));
+
+    this.$root.appendChild(createElement(
+      VdomElement.create("div", {"class" : "fullscreen"},
+        VdomElement.create("input", {"id" : "fullscreen", "type" : "checkbox"}),
+        VdomElement.create("label", {"for" : "fullscreen"}, "Start fullscreen")
+      )
     ));
   }
 
