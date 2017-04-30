@@ -79,8 +79,8 @@ export class StatusWindow implements RenderSystem
             ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.target))
             : null,
 
-          attackTarget && this.entities.containsEntity(attackTarget.target)
-            ? VdomElement.create("span", {"class" : "atk"}, entityName(attackTarget.target))
+          attackTarget && this.entities.getEntity(attackTarget.target)
+            ? VdomElement.create("span", {"class" : "atk"}, entityName(this.entities.getEntity(attackTarget.target)))
             : null
         )
       );

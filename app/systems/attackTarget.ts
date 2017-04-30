@@ -7,12 +7,12 @@ export class Targetable
 
 export class AttackTarget
 {
-  target : Entity = null;
+  target : number = null;
   setTarget(e : Entity) : boolean
   {
     if (e.components[Targetable.t])
     {
-      this.target = e;
+      this.target = e.id;
       return true;
     }
 

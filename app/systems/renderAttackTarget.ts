@@ -18,14 +18,15 @@ export class RenderAttackTarget implements RenderSystem
     this.entities.forEachEntity([Selected.t, AttackTarget.t], (e : Entity, components : any[]) =>
     {
       let [, attackTarget] = components as [Selected, AttackTarget];
-      if (!this.entities.containsEntity(attackTarget.target))
+      let targetEntity = this.entities.getEntity(attackTarget.target);
+      if (!targetEntity)
       {
         attackTarget.target = null;
         return;
       }
 
-      let [targetPosition] = attackTarget.target.getComponents([Position.t]) as [Position];
-      let [targetCachedPos] = attackTarget.target.getOptionalComponents([Cached.t + Position.t]) as [Cached<Position>];
+      let [targetPosition] = targetEntity.getComponents([Position.t]) as [Position];
+      let [targetCachedPos] = targetEntity.getOptionalComponents([Cached.t + Position.t]) as [Cached<Position>];
       let targetPos = interpolatePosition(targetPosition, targetCachedPos, interp);
 
       this.renderer.drawCircle(targetPos, 10, RenderAttackTarget.targetProps, this.viewport);

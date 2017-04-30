@@ -36,18 +36,19 @@ export class Shooting implements System
       else if (armed.cooldownRemaining > 0)
         return;
 
-      if (!this.entities.containsEntity(target.target))
+      let targetEntity = this.entities.getEntity(target.target);
+      if (!targetEntity)
       {
         target.target = null;
         return;
       }
 
-      let targetPos = target.target.components[Position.t] as Position;
+      let targetPos = targetEntity.components[Position.t] as Position;
       let toTarget = targetPos.pos.clone().subtract(position.pos);
       if (norm(toTarget) > armed.range)
         return;
 
-      let [targetVel] = target.target.getOptionalComponents([Velocity.t]) as [Velocity];
+      let [targetVel] = targetEntity.getOptionalComponents([Velocity.t]) as [Velocity];
 
       armed.cooldownRemaining = Math.max(armed.cooldown - delta, 0);
       deferred.push(() =>
@@ -63,7 +64,7 @@ export class Shooting implements System
           [Cached.t + Rotation.t] : new Cached<Rotation>(),
           [Velocity.t] : new Velocity(initialVelocity),
           [TracerEffect.t] : new TracerEffect(),
-          [Projectile.t] : new Projectile(target.target, armed.range, armed.projectileSpeed, armed.damage)
+          [Projectile.t] : new Projectile(targetEntity, armed.range, armed.projectileSpeed, armed.damage)
         });
 
         this.entities.addEntity(projectile);

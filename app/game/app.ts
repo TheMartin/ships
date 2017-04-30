@@ -35,7 +35,7 @@ export class App
     return new App($root);
   }
 
-  runGame(fullscreen : boolean) : void
+  private readyGame(fullscreen : boolean) : Game
   {
     let canvas = document.createElement("canvas");
 
@@ -73,8 +73,7 @@ export class App
 
     this.$root.appendChild(canvas);
     let renderer = new Renderer(canvas);
-    let game = new Game(this.$root, canvas, renderer);
-    game.start(60);
+    return new Game(this.$root, canvas, renderer);
   }
 
   private render() : void
@@ -105,7 +104,8 @@ export class App
 
       this.renderButton("Start singleplayer game", (e : Event) =>
       {
-        this.runGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
+        let game = this.readyGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
+        game.startSingleplayer(60);
       }),
 
       this.renderButton("Host multiplayer game", (e : Event) =>
@@ -128,7 +128,8 @@ export class App
         });
         this.peer.on('connect', () =>
         {
-          this.runGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
+          let game = this.readyGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
+          game.startMultiplayerClient(60, this.peer);
         });
       }),
     );
@@ -151,7 +152,8 @@ export class App
           this.peer.signal(decodeData((<HTMLTextAreaElement>document.getElementById("answer")).value));
           this.peer.on('connect', () =>
           {
-            this.runGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
+            let game = this.readyGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
+            game.startMultiplayerHost(60, this.peer);
           });
         }),
 

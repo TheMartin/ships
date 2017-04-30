@@ -14,11 +14,11 @@ export class Projectile
   constructor(target : Entity, range : number, public speed : number, public damage : number)
   {
     if (target.components[Targetable.t])
-      this.target = target;
+      this.target = target.id;
 
     this.lifetime = range / speed;
   }
-  public target : Entity = null;
+  public target : number = null;
   public lifetime : number = 0;
   static readonly t : string = "Projectile";
 };
@@ -40,14 +40,15 @@ export class MoveProjectiles implements System
 
       projectile.lifetime -= dt;
 
-      if (!this.entities.containsEntity(projectile.target))
+      let targetEntity = this.entities.getEntity(projectile.target);
+      if (!targetEntity)
       {
         projectile.target = null;
         return;
       }
 
-      let [targetPos, targetVel] = projectile.target.getComponents([Position.t, Velocity.t]) as [Position, Velocity];
-      let [damageable] = projectile.target.getOptionalComponents([Damageable.t]) as [Damageable];
+      let [targetPos, targetVel] = targetEntity.getComponents([Position.t, Velocity.t]) as [Position, Velocity];
+      let [damageable] = targetEntity.getOptionalComponents([Damageable.t]) as [Damageable];
       if (distance(targetPos.pos, position.pos) < 5)
       {
         if (damageable)

@@ -44,7 +44,7 @@ export class Entity
   }
 
   readonly components : { [name : string] : Object } = { };
-  readonly id : number;
+  id : number;
   private static Count : number = 0;
 };
 
@@ -60,9 +60,14 @@ export class EntityContainer
     this.entities[e.id] = e;
   }
 
-  containsEntity(e : Entity) : boolean
+  containsEntity(id : number) : boolean
   {
-    return e !== null && e.id in this.entities;
+    return id !== null && id in this.entities;
+  }
+
+  getEntity(id : number) : Entity
+  {
+    return this.entities[id];
   }
 
   removeEntity(e : Entity) : void
@@ -112,5 +117,5 @@ export class EntityContainer
     return entities;
   }
 
-  readonly entities : EntityCollection = {};
+  entities : EntityCollection = {};
 };
