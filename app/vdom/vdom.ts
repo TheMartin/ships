@@ -1,8 +1,10 @@
 export type VdomNode = string | VdomElement;
 
+type Prop = string | EventListenerOrEventListenerObject | boolean;
+
 interface PropMap
 {
-  [propName : string] : string | EventListenerOrEventListenerObject;
+  [propName : string] : Prop;
 };
 
 export class VdomElement
@@ -31,10 +33,23 @@ function extractEventName(name : string) : string
   return name.slice(2).toLowerCase();
 }
 
-function setProp($target : HTMLElement, name : string, value : string | EventListenerOrEventListenerObject) : void
+function setProp($target : HTMLElement, name : string, value : Prop) : void
 {
   if (!isEventProp(name))
-    $target.setAttribute(name, <string>value);
+  {
+    if (typeof value === "string")
+    {
+      $target.setAttribute(name, value);
+    }
+    else if (typeof value === "boolean")
+    {
+      if (value)
+      {
+        $target.setAttribute(name, "");
+      }
+      $target[name] = true;
+    }
+  }
 }
 
 function setProps($target : HTMLElement, props : PropMap) : void
@@ -42,13 +57,19 @@ function setProps($target : HTMLElement, props : PropMap) : void
   Object.keys(props).forEach(name => setProp($target, name, props[name]));
 }
 
-function removeProp($target : HTMLElement, name : string, oldValue : string | EventListenerOrEventListenerObject) : void
+function removeProp($target : HTMLElement, name : string, oldValue : Prop) : void
 {
   if (!isEventProp(name))
+  {
     $target.removeAttribute(name);
+    if (typeof oldValue === "boolean")
+    {
+      $target[name] = false;
+    }
+  }
 }
 
-function updateProp($target : HTMLElement, name : string, newValue : string | EventListenerOrEventListenerObject, oldValue : string | EventListenerOrEventListenerObject) : void
+function updateProp($target : HTMLElement, name : string, newValue : Prop, oldValue : Prop) : void
 {
   if (!newValue)
   {

@@ -1,4 +1,4 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { Entity, EntityContainer, EntityCollection } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
@@ -27,7 +27,7 @@ import { UiManager } from "../ui/uiManager";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
-import { serialize, deserialize } from "../network/network";
+import * as Network from "../network/network";
 
 import { Static } from "../data/static";
 
@@ -80,7 +80,9 @@ export class Game
   {
     this.setUpSystems();
 
-    const serverTickPerSecond = 20;
+    const serverTickPerSecond = 10;
+    let history : { ack : number, state : EntityCollection }[] = [];
+    let ackCounter = 0;
 
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -107,8 +109,16 @@ export class Game
     let sendUpdatesFn = () =>
     {
       setTimeout(sendUpdatesFn, 1000 / serverTickPerSecond);
-      peer.send(JSON.stringify(serialize(this.entityContainer)));
+      const state = Network.clone(this.entityContainer.entities);
+      peer.send(JSON.stringify({ ack : ackCounter++, delta : Network.serialize(Network.delta(history.length > 0 ? history[0].state : {}, state)) }));
+      history.push( { ack : ackCounter, state } );
     };
+
+    peer.on('data', (data : Buffer) =>
+    {
+      const { ack } = JSON.parse(data.toString());
+      history = history.filter(item => item.ack >= ack);
+    });
 
     this.setUpScenario();
 
@@ -120,6 +130,8 @@ export class Game
   startMultiplayerClient(fps : number, peer : SimplePeer.Instance) : void
   {
     this.setUpClientSystems();
+
+    let ackCounter = -1;
 
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -145,7 +157,13 @@ export class Game
 
     peer.on('data', (data : Buffer) =>
     {
-      deserialize(JSON.parse(data.toString()), this.entityContainer);
+      let { ack, delta } = JSON.parse(data.toString());
+      if (ack > ackCounter)
+      {
+        Network.applyDelta(this.entityContainer.entities, Network.deserialize(delta));
+        ackCounter = ack;
+      }
+      peer.send(JSON.stringify({ ack }));
     });
 
     setTimeout(updateFn, 1000 / this.fps);

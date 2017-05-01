@@ -7,6 +7,11 @@ export class Vec2
     return new Vec2(this.x, this.y);
   }
 
+  equal(v : Vec2) : boolean
+  {
+    return this.x === v.x && this.y === v.y;
+  }
+
   add(v : Vec2) : Vec2
   {
     this.x += v.x;
@@ -93,6 +98,11 @@ export class Vec2
   static fromAngle(a : number) : Vec2
   {
     return new Vec2(Math.sin(a), -Math.cos(a));
+  }
+
+  static equal(lhs : Vec2, rhs : Vec2) : boolean
+  {
+    return lhs.equal(rhs);
   }
 
   static readonly zero : Vec2 = new Vec2(0, 0);

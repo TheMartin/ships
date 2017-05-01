@@ -56,7 +56,7 @@ export class Shooting implements System
         let intercept = interceptVector(targetPos.pos, targetVel ? targetVel.vel : Vec2.zero, position.pos, armed.projectileSpeed);
         let initialVelocity = intercept ? intercept : toTarget.normalized().multiply(armed.projectileSpeed);
 
-        let projectile = new Entity(
+        let projectile = EntityContainer.createEntity(
         {
           [Position.t] : new Position(position.pos.clone()),
           [Cached.t + Position.t] : new Cached<Position>(),

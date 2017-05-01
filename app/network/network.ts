@@ -19,41 +19,111 @@ import { Static } from "../data/static";
 
 import { Vec2 } from "../vec2/vec2";
 
-export function serialize(entityContainer : EntityContainer) : any
+class NetworkFn
 {
-  const serializations : { [key : string] : (component : any) => any } = {
-    [Position.t] : (pos : Position) => { return { x : pos.pos.x, y : pos.pos.y }; },
-    [Rotation.t] : (rot : Rotation) => { return { a : rot.angle }; },
-    [Velocity.t] : (vel : Velocity) => { return { x : vel.vel.x, y : vel.vel.y }; },
-    [AngularVelocity.t] : (vel : AngularVelocity) => { return { a : vel.vel }; },
-    [Cached.t + Position.t] : () => null,
-    [Cached.t + Rotation.t] : () => null,
-    [MoveToTarget.t] : () => null,
-    [AttackTarget.t] : () => null,
-    [Targetable.t] : () => null,
-    [Clickable.t] : () => null,
-    [Selectable.t] : () => null,
-    [Selected.t] : () => null,
-    [Controlled.t] : () => null,
-    [Named.t] : () => null,
-    [Armed.t] : () => null,
-    [Projectile.t] : () => null,
-    [Damageable.t] : (dmg : Damageable) => { return { hp : dmg.hitpoints, max : dmg.maxHitpoints }; },
-    [RenderShape.t] : (shape : RenderShape) => { return { shape : shape.shape == Static.Ship ? "Ship" : "NeutralShip" }; },
-    [TracerEffect.t] : () => null
-  };
-  let result : any = {};
-  for (let id in entityContainer.entities)
-  {
-    let entity = entityContainer.entities[id];
-    let serializedEntity = {};
-    for (let key in entity.components)
-    {
-      let component = entity.components[key];
-      let serializedComponent = serializations[key](component);
-      serializedEntity[key] = serializedComponent;
+  private static table : { [key : string] : {
+    equal : (lhs : any, rhs : any) => boolean;
+    clone : (component : any) => any;
+    serialize : (component : any) => any[];
+    deserialize : (data : any[]) => any;
+  } } = {
+    [Position.t] : {
+      equal : (lhs : Position, rhs : Position) => lhs.pos.equal(rhs.pos),
+      clone : (pos : Position) => new Position(pos.pos.clone()),
+      serialize : (pos : Position) => [ pos.pos.x, pos.pos.y ],
+      deserialize : data => new Position(new Vec2(data[0], data[1]))
+    },
+
+    [Rotation.t] : {
+      equal : (lhs : Rotation, rhs : Rotation) => lhs.angle === rhs. angle,
+      clone : (rot : Rotation) => new Rotation(rot.angle),
+      serialize : (rot : Rotation) => [ rot.angle ],
+      deserialize : data => new Rotation(data[0])
+    },
+
+    [Velocity.t] : {
+      equal : (lhs : Velocity, rhs : Velocity) => lhs.vel.equal(rhs.vel),
+      clone : (vel : Velocity) => new Velocity(vel.vel.clone()),
+      serialize : (vel : Velocity) => [ vel.vel.x, vel.vel.y ],
+      deserialize : data => new Velocity(new Vec2(data[0], data[1]))
+    },
+
+    [AngularVelocity.t] : {
+      equal : (lhs : AngularVelocity, rhs : AngularVelocity) => lhs.vel === rhs.vel,
+      clone : (vel : AngularVelocity) => new AngularVelocity(vel.vel),
+      serialize : (vel : AngularVelocity) => [ vel.vel ],
+      deserialize : data => new AngularVelocity(data[0])
+    },
+
+    [Damageable.t] : {
+      equal : (lhs : Damageable, rhs : Damageable) => lhs.hitpoints === rhs.hitpoints && lhs.maxHitpoints === rhs.maxHitpoints,
+      clone : (dmg : Damageable) => damaged(dmg.maxHitpoints, dmg.hitpoints),
+      serialize : (dmg : Damageable) => [ dmg.maxHitpoints, dmg.hitpoints ],
+      deserialize : data => { return damaged(data[0], data[1]); }
+    },
+
+    [RenderShape.t] : {
+      equal : (lhs : RenderShape, rhs : RenderShape) => lhs.shape === rhs.shape,
+      clone : (shp : RenderShape) => new RenderShape(shp.shape),
+      serialize : (shape : RenderShape) => [ shape.shape == Static.Ship ? "Ship" : "NeutralShip" ],
+      deserialize : data => new RenderShape(Static[data[0]])
+    },
+
+    [TracerEffect.t] : {
+      equal : (lhs : TracerEffect, rhs : TracerEffect) => true,
+      clone : () => new TracerEffect(),
+      serialize : () => null,
+      deserialize : data => new TracerEffect()
     }
-    result[id] = serializedEntity;
+  };
+
+  static isNetworkedComponent(key : string) : boolean
+  {
+    return key in NetworkFn.table;
+  }
+
+  static equal(key : string, lhs : any, rhs : any) : boolean
+  {
+    return NetworkFn.isNetworkedComponent(key) ? NetworkFn.table[key].equal(lhs, rhs) : true;
+  }
+
+  static clone(key : string, component : any) : any
+  {
+    return NetworkFn.isNetworkedComponent(key) ? NetworkFn.table[key].clone(component) : null;
+  }
+
+  static serialize(key : string, component : any) : any[]
+  {
+    return NetworkFn.isNetworkedComponent(key) ? NetworkFn.table[key].serialize(component) : null;
+  }
+
+  static deserialize(key : string, data : any[]) : any
+  {
+    return NetworkFn.isNetworkedComponent(key) ? NetworkFn.table[key].deserialize(data) : null;
+  }
+};
+
+export function serialize(entities : EntityCollection) : any
+{
+  let result : any = {};
+  for (let id in entities)
+  {
+    let entity = entities[id];
+    if (entity.components === null)
+    {
+      result[id] = null;
+    }
+    else
+    {
+      let serializedEntity = {};
+      for (let key in entity.components)
+      {
+        let component = entity.components[key];
+        let serializedComponent = NetworkFn.serialize(key, component);
+        serializedEntity[key] = serializedComponent;
+      }
+      result[id] = serializedEntity;
+    }
   }
   return result;
 }
@@ -65,45 +135,130 @@ function damaged(max : number, hp : number) : Damageable
   return component;
 }
 
-export function deserialize(data : any, entityContainer : EntityContainer) : void
+export function deserialize(data : any) : EntityCollection
 {
-  const deserializations : { [key : string] : (data : any) => any } = {
-    [Position.t] : data => new Position(new Vec2(data.x, data.y)),
-    [Rotation.t] : data => new Rotation(data.a),
-    [Velocity.t] : data => new Velocity(new Vec2(data.x, data.y)),
-    [AngularVelocity.t] : data => new AngularVelocity(data.a),
-    [Cached.t + Position.t] : () => null,
-    [Cached.t + Rotation.t] : () => null,
-    [MoveToTarget.t] : () => null,
-    [AttackTarget.t] : () => null,
-    [Targetable.t] : () => null,
-    [Clickable.t] : () => null,
-    [Selectable.t] : () => null,
-    [Selected.t] : () => null,
-    [Controlled.t] : () => null,
-    [Named.t] : () => null,
-    [Armed.t] : () => null,
-    [Projectile.t] : () => null,
-    [Damageable.t] : data => { return damaged(data.max, data.hp); },
-    [RenderShape.t] : data => new RenderShape(Static[data.shape]),
-    [TracerEffect.t] : data => new TracerEffect()
-  };
-
   let result : EntityCollection = {};
   for (let id in data)
   {
-    let components = {};
-    for (let key in data[id])
+    if (data[id] === null)
     {
-      let component = data[id][key];
-      let deserializedComponent = deserializations[key](component);
-
-      if (deserializedComponent)
-        components[key] = deserializedComponent;
+      let e = new Entity(parseInt(id), null);
+      result[e.id] = e;
     }
-    let e = new Entity(components);
-    e.id = parseInt(id);
-    result[parseInt(id)] = e;
+    else
+    {
+      let components = {};
+      for (let key in data[id])
+      {
+        let component = data[id][key];
+        let deserializedComponent = NetworkFn.deserialize(key, component);
+
+        if (deserializedComponent)
+          components[key] = deserializedComponent;
+      }
+      let e = new Entity(parseInt(id), components);
+      result[e.id] = e;
+    }
   }
-  entityContainer.entities = result;
+  return result;
+}
+
+export function clone(collection : EntityCollection) : EntityCollection
+{
+  let result : EntityCollection = {};
+  for (let id in collection)
+  {
+    let entity = collection[id];
+    let components = {};
+    for (let key in entity.components)
+    {
+      if (NetworkFn.isNetworkedComponent(key))
+        components[key] = NetworkFn.clone(key, entity.components[key]);
+    }
+    result[id] = new Entity(parseInt(id), components);
+  }
+  return result;
+}
+
+export function delta(oldCollection : EntityCollection, newCollection : EntityCollection) : EntityCollection
+{
+  let result : EntityCollection = {};
+  for (let id in oldCollection)
+  {
+    let oldEntity = oldCollection[id];
+    let newEntity = newCollection[id];
+    if (!newEntity)
+    {
+      result[id] = new Entity(parseInt(id), null);
+    }
+    else
+    {
+      let components = {};
+      for (let key in oldEntity.components)
+      {
+        if (!NetworkFn.isNetworkedComponent(key))
+          continue;
+
+        if (key in newEntity.components)
+        {
+          if (!NetworkFn.equal(key, oldEntity.components[key], newEntity.components[key]))
+            components[key] = NetworkFn.clone(key, newEntity.components[key]);
+        }
+        else
+        {
+          components[key] = null;
+        }
+      }
+      result[id] = new Entity(parseInt(id), components);
+    }
+  }
+  for (let id in newCollection)
+  {
+    if (!(id in oldCollection))
+    {
+      let entity = newCollection[id];
+      let components = {};
+      for (let key in entity.components)
+      {
+        if (NetworkFn.isNetworkedComponent(key))
+          components[key] = NetworkFn.clone(key, entity.components[key]);
+      }
+      result[id] = new Entity(parseInt(id), components);
+    }
+  }
+  return result;
+}
+
+export function applyDelta(oldCollection : EntityCollection, delta : EntityCollection) : void
+{
+  for (let id in delta)
+  {
+    let entityDelta = delta[id];
+    let entity = oldCollection[id];
+    if (entity)
+    {
+      if (entityDelta.components === null)
+      {
+        delete oldCollection[id];
+      }
+      else
+      {
+        for (let key in entityDelta.components)
+        {
+          if (entityDelta.components[key] === null)
+          {
+            delete entity.components[key];
+          }
+          else
+          {
+            entity.components[key] = entityDelta.components[key];
+          }
+        }
+      }
+    }
+    else if (entityDelta.components)
+    {
+      oldCollection[id] = entityDelta;
+    }
+  }
 }

@@ -111,7 +111,7 @@ export class App
       this.renderButton("Host multiplayer game", (e : Event) =>
       {
         this.switchState(AppState.HostMp);
-        this.peer = SimplePeer({ initiator : true, trickle : false });
+        this.peer = SimplePeer(Object.assign({ initiator : true }, App.peerConfig));
         this.peer.on('signal', (data : SimplePeer.SignalData) =>
         {
           (<HTMLTextAreaElement>document.getElementById("offer")).value = encodeData(data);
@@ -121,7 +121,7 @@ export class App
       this.renderButton("Join multiplayer game", (e : Event) =>
       {
         this.switchState(AppState.JoinMp);
-        this.peer = SimplePeer({ trickle : false });
+        this.peer = SimplePeer(App.peerConfig);
         this.peer.on('signal', (data : SimplePeer.SignalData) =>
         {
           (<HTMLTextAreaElement>document.getElementById("answer")).value = encodeData(data);
@@ -140,7 +140,7 @@ export class App
     return VdomElement.create("div", {},
 
       VdomElement.create("label", {"for" : "offer"}, "Offer:"),
-      VdomElement.create("textarea", {"id" : "offer", "rows" : "10", "cols" : "50"}),
+      VdomElement.create("textarea", {"id" : "offer", "rows" : "10", "cols" : "50", "readonly" : true}),
 
       VdomElement.create("label", {"for" : "answer"}, "Answer:"),
       VdomElement.create("textarea", {"id" : "answer", "rows" : "10", "cols" : "50"}),
@@ -175,7 +175,7 @@ export class App
       VdomElement.create("textarea", {"id" : "offer", "rows" : "10", "cols" : "50"}),
 
       VdomElement.create("label", {"for" : "answer"}, "Answer:"),
-      VdomElement.create("textarea", {"id" : "answer", "rows" : "10", "cols" : "50"}),
+      VdomElement.create("textarea", {"id" : "answer", "rows" : "10", "cols" : "50", "readonly" : true}),
 
       VdomElement.create("ul", {},
         this.renderButton("Generate answer", (e : Event) =>
@@ -219,4 +219,11 @@ export class App
   private peer : SimplePeer.Instance = null;
   private root : VdomElement = null;
   private state : AppState = AppState.MainMenu;
+  private static peerConfig : SimplePeer.Options = {
+    trickle : false,
+    channelConfig : {
+      ordered : false,
+      maxRetransmits : 0
+    }
+  };
 };

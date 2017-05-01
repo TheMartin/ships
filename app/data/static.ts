@@ -1,4 +1,4 @@
-import { Entity } from "../ecs/entities";
+import { Entity, EntityContainer } from "../ecs/entities";
 import { Cached } from "../systems/cached";
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
@@ -48,7 +48,7 @@ export class Static
 
   static makeShip(pos : Vec2, rot : number, name : string, shape : Shape, player : Player)
   {
-    return new Entity({
+    return EntityContainer.createEntity({
       [Position.t] : new Position(pos),
       [Rotation.t] : new Rotation(rot),
       [Velocity.t] : new Velocity(new Vec2(0, 0)),

@@ -1,10 +1,7 @@
 export class Entity
 {
-  constructor( components : { [name : string] : Object } = { } )
+  constructor( public readonly id : number, public readonly components : { [name : string] : Object } = { } )
   {
-    this.components = components;
-    this.id = Entity.Count;
-    Entity.Count += 1;
   }
 
   addComponent(name : string, component : Object) : Entity
@@ -42,10 +39,6 @@ export class Entity
     }
     return components;
   }
-
-  readonly components : { [name : string] : Object } = { };
-  id : number;
-  private static Count : number = 0;
 };
 
 export interface EntityCollection
@@ -55,6 +48,11 @@ export interface EntityCollection
 
 export class EntityContainer
 {
+  static createEntity(components : { [name : string] : Object } = { }) : Entity
+  {
+    return new Entity(EntityContainer.EntityCount++, components);
+  }
+
   addEntity(e : Entity) : void
   {
     this.entities[e.id] = e;
@@ -118,4 +116,5 @@ export class EntityContainer
   }
 
   entities : EntityCollection = {};
+  private static EntityCount = 0;
 };
