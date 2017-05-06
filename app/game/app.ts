@@ -2,7 +2,7 @@ import { Game } from "../game/game";
 import { Renderer } from "../renderer/renderer";
 import * as Fullscreen from "../util/fullscreen";
 import { VdomNode, VdomElement, updateElementChildren } from "../vdom/vdom";
-import * as SimplePeer from "simple-peer";
+import * as Network from "../network/network";
 
 enum AppState
 {
@@ -11,12 +11,12 @@ enum AppState
   JoinMp
 };
 
-function encodeData(data : SimplePeer.SignalData) : string
+function encodeData(data : Network.SignalData) : string
 {
   return window.btoa(JSON.stringify(data));
 };
 
-function decodeData(data : string) : SimplePeer.SignalData
+function decodeData(data : string) : Network.SignalData
 {
   return JSON.parse(window.atob(data));
 };
@@ -111,8 +111,7 @@ export class App
       this.renderButton("Host multiplayer game", (e : Event) =>
       {
         this.switchState(AppState.HostMp);
-        this.peer = SimplePeer(Object.assign({ initiator : true }, App.peerConfig));
-        this.peer.on('signal', (data : SimplePeer.SignalData) =>
+        this.connection = new Network.Server((data : Network.SignalData) =>
         {
           (<HTMLTextAreaElement>document.getElementById("offer")).value = encodeData(data);
         });
@@ -121,16 +120,6 @@ export class App
       this.renderButton("Join multiplayer game", (e : Event) =>
       {
         this.switchState(AppState.JoinMp);
-        this.peer = SimplePeer(App.peerConfig);
-        this.peer.on('signal', (data : SimplePeer.SignalData) =>
-        {
-          (<HTMLTextAreaElement>document.getElementById("answer")).value = encodeData(data);
-        });
-        this.peer.on('connect', () =>
-        {
-          let game = this.readyGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
-          game.startMultiplayerClient(60, this.peer);
-        });
       }),
     );
   }
@@ -149,19 +138,20 @@ export class App
 
         this.renderButton("Start", (e : Event) =>
         {
-          this.peer.signal(decodeData((<HTMLTextAreaElement>document.getElementById("answer")).value));
-          this.peer.on('connect', () =>
+          let server = this.connection as Network.Server;
+          server.acceptConnection(decodeData((<HTMLTextAreaElement>document.getElementById("answer")).value));
+          server.onConnect(() =>
           {
             let game = this.readyGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
-            game.startMultiplayerHost(60, this.peer);
+            game.startMultiplayerHost(60, 10, server);
           });
         }),
 
         this.renderButton("Back", (e : Event) =>
         {
           this.switchState(AppState.MainMenu);
-          this.peer.destroy();
-          this.peer = null;
+          this.connection.destroy();
+          this.connection = null;
         })
       )
     );
@@ -180,13 +170,25 @@ export class App
       VdomElement.create("ul", {},
         this.renderButton("Generate answer", (e : Event) =>
         {
-          this.peer.signal(decodeData((<HTMLTextAreaElement>document.getElementById("offer")).value));
+          let client = new Network.Client(decodeData((<HTMLTextAreaElement>document.getElementById("offer")).value), (data : Network.SignalData) =>
+          {
+            (<HTMLTextAreaElement>document.getElementById("answer")).value = encodeData(data);
+          });
+          client.onConnect(() =>
+          {
+            let game = this.readyGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
+            game.startMultiplayerClient(60, client);
+          });
+          this.connection = client;
         }),
         this.renderButton("Back", (e : Event) =>
         {
           this.switchState(AppState.MainMenu);
-          this.peer.destroy();
-          this.peer = null;
+          if (this.connection)
+          {
+            this.connection.destroy();
+            this.connection = null;
+          }
         })
       )
     );
@@ -216,14 +218,7 @@ export class App
     }
   }
 
-  private peer : SimplePeer.Instance = null;
+  private connection : Network.Server | Network.Client = null;
   private root : VdomElement = null;
   private state : AppState = AppState.MainMenu;
-  private static peerConfig : SimplePeer.Options = {
-    trickle : false,
-    channelConfig : {
-      ordered : false,
-      maxRetransmits : 0
-    }
-  };
 };

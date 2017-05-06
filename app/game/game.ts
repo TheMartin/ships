@@ -28,12 +28,11 @@ import { Renderer, Viewport } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
 import * as Network from "../network/network";
+import * as NetworkSync from "../network/networkSync";
 
 import { Static } from "../data/static";
 
 import { shuffle } from "../util/shuffle";
-
-import * as SimplePeer from "simple-peer";
 
 export class Game
 {
@@ -76,11 +75,10 @@ export class Game
     requestAnimationFrame(drawFn);
   }
 
-  startMultiplayerHost(fps : number, peer : SimplePeer.Instance) : void
+  startMultiplayerHost(fps : number, netTickRate : number, server : Network.Server) : void
   {
     this.setUpSystems();
 
-    const serverTickPerSecond = 10;
     let history : { ack : number, state : EntityCollection }[] = [];
     let ackCounter = 0;
 
@@ -108,15 +106,17 @@ export class Game
 
     let sendUpdatesFn = () =>
     {
-      setTimeout(sendUpdatesFn, 1000 / serverTickPerSecond);
-      const state = Network.clone(this.entityContainer.entities);
-      peer.send(JSON.stringify({ ack : ackCounter++, delta : Network.serialize(Network.delta(history.length > 0 ? history[0].state : {}, state)) }));
-      history.push( { ack : ackCounter, state } );
+      setTimeout(sendUpdatesFn, 1000 / netTickRate);
+      const state = NetworkSync.clone(this.entityContainer.entities);
+      const delta = NetworkSync.delta(history.length > 0 ? history[0].state : {}, state);
+      const ack = ackCounter++;
+      server.send({ ack , delta : NetworkSync.serialize(delta) });
+      history.push({ ack , state });
     };
 
-    peer.on('data', (data : Buffer) =>
+    server.onData((data : any) =>
     {
-      const { ack } = JSON.parse(data.toString());
+      const { ack } = data;
       history = history.filter(item => item.ack >= ack);
     });
 
@@ -124,10 +124,10 @@ export class Game
 
     setTimeout(updateFn, 1000 / this.fps);
     requestAnimationFrame(drawFn);
-    setTimeout(sendUpdatesFn, 1000 / serverTickPerSecond);
+    setTimeout(sendUpdatesFn, 1000 / netTickRate);
   }
 
-  startMultiplayerClient(fps : number, peer : SimplePeer.Instance) : void
+  startMultiplayerClient(fps : number, client : Network.Client) : void
   {
     this.setUpClientSystems();
 
@@ -155,15 +155,15 @@ export class Game
       this.draw(dt, interp);
     };
 
-    peer.on('data', (data : Buffer) =>
+    client.onData((data : any) =>
     {
-      let { ack, delta } = JSON.parse(data.toString());
+      let { ack, delta } = data;
       if (ack > ackCounter)
       {
-        Network.applyDelta(this.entityContainer.entities, Network.deserialize(delta));
+        NetworkSync.applyDelta(this.entityContainer.entities, NetworkSync.deserialize(delta));
         ackCounter = ack;
       }
-      peer.send(JSON.stringify({ ack }));
+      client.send({ ack });
     });
 
     setTimeout(updateFn, 1000 / this.fps);
