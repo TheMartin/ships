@@ -4,8 +4,7 @@ import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";
 import { Position, Rotation } from "../systems/spatial";
-import { Cached } from "../systems/cached";
-import { interpolatePosition, interpolateRotation } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 import { Vec2, lerp } from "../vec2/vec2";
 
 export class RenderShape
@@ -16,16 +15,21 @@ export class RenderShape
 
 export class ShapeRenderer implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
   update(dt : number, interp : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([RenderShape.t, Position.t], (e : Entity, components : any[]) =>
     {
       let [shape, position] = components as [RenderShape, Position];
-      let [rotation, cachedPos, cachedRot] = e.getOptionalComponents([Rotation.t, Cached.t + Position.t, Cached.t + Rotation.t]) as [Rotation, Cached<Position>, Cached<Rotation>];
+      let [rotation] = e.getOptionalComponents([Rotation.t]) as [Rotation];
 
-      this.renderer.drawShape(shape.shape, interpolatePosition(position, cachedPos, interp), rotation ? interpolateRotation(rotation, cachedRot, interp) : 0, 1, this.viewport);
+      this.renderer.drawShape(shape.shape,
+        this.spatialCache.interpolatePosition(position, e, interp),
+        rotation ? this.spatialCache.interpolateRotation(rotation, e, interp) : 0,
+        1,
+        this.viewport
+      );
     });
   }
 };

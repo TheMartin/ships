@@ -3,9 +3,8 @@ import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager } from "../ui/uiManager";
 import { Selected } from "../systems/selection";
-import { Cached } from "../systems/cached";
 import { Position, Rotation } from "../systems/spatial";
-import { interpolatePosition, interpolateRotation } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 import { Velocity } from "../systems/kinematic";
 import { MoveToTarget } from "../systems/moveTo";
 import { Named } from "../systems/named";
@@ -22,14 +21,14 @@ function positionToString(pos : Vec2) : string
   return pos.x.toFixed() + " : " + pos.y.toFixed();
 };
 
-function spatialInformation(position : Position, cachedPos : Cached<Position>, rotation : Rotation, cachedRot : Cached<Rotation>, interp : number, velocity : Velocity) : string
+function spatialInformation(position : Position, rotation : Rotation, spatialCache : SpatialCache, e : Entity, interp : number, velocity : Velocity) : string
 {
   let msgParts : string[] = [];
   if (position)
-    msgParts.push(positionToString(interpolatePosition(position, cachedPos, interp)));
+    msgParts.push(positionToString(spatialCache.interpolatePosition(position, e, interp)));
 
   if (rotation)
-    msgParts.push((180 * wrapAngle(interpolateRotation(rotation, cachedRot, interp)) / Math.PI).toFixed() + "°");
+    msgParts.push((180 * wrapAngle(spatialCache.interpolateRotation(rotation, e, interp)) / Math.PI).toFixed() + "°");
 
   if (velocity)
     msgParts.push(norm(velocity.vel).toFixed());
@@ -45,7 +44,7 @@ function entityName(e : Entity) : string
 
 export class StatusWindow implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private ui : UiManager)
+  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private ui : UiManager)
   {
     this.elem = VdomElement.create("div", {"class" : "window"});
     this.$elem = createElement(this.elem) as HTMLElement;
@@ -56,9 +55,9 @@ export class StatusWindow implements RenderSystem
     let elem = VdomElement.create("div", {"class" : "window"});
     this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
-      let [name, position, cachedPos, rotation, cachedRot, velocity, moveTarget, attackTarget, damageable] = e.getOptionalComponents(
-        [Named.t, Position.t, Cached.t + Position.t, Rotation.t, Cached.t + Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
-        ) as [Named, Position, Cached<Position>, Rotation, Cached<Rotation>, Velocity, MoveToTarget, AttackTarget, Damageable];
+      let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = e.getOptionalComponents(
+        [Named.t, Position.t, Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
+        ) as [Named, Position, Rotation, Velocity, MoveToTarget, AttackTarget, Damageable];
 
       elem.children.push(
         VdomElement.create("div", { "class" : "ship" },
@@ -72,7 +71,7 @@ export class StatusWindow implements RenderSystem
             : null,
 
           position || rotation || velocity
-            ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, cachedPos, rotation, cachedRot, interp, velocity))
+            ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, rotation, this.spatialCache, e, interp, velocity))
             : null,
 
           moveTarget && moveTarget.target
@@ -88,7 +87,7 @@ export class StatusWindow implements RenderSystem
 
     updateElementChildren(this.$elem, elem, this.elem);
     this.elem = elem;
-    
+
     if (this.elem.children.length == 0)
     {
       if (this.$elem.parentNode)

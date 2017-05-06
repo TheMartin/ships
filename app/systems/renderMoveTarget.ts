@@ -5,13 +5,12 @@ import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { MoveToTarget } from "../systems/moveTo";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
-import { Cached } from "../systems/cached";
-import { interpolatePosition } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 import { Vec2 } from "../vec2/vec2";
 
 export class RenderMoveTarget implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
   update(dt : number, interp : number, deferred : Deferred) : void
   {
@@ -24,9 +23,9 @@ export class RenderMoveTarget implements RenderSystem
       this.renderer.drawCircle(moveTarget.target, 10, RenderMoveTarget.targetProps, this.viewport);
       this.renderer.drawCircle(moveTarget.target, 5, RenderMoveTarget.targetProps, this.viewport);
 
-      let [position, cachedPos] = e.getOptionalComponents([Position.t, Cached.t + Position.t]) as [Position, Cached<Position>];
+      let [position] = e.getOptionalComponents([Position.t]) as [Position];
       if (position)
-        this.renderer.drawLine(interpolatePosition(position, cachedPos, interp), moveTarget.target, RenderMoveTarget.targetProps, this.viewport);
+        this.renderer.drawLine(this.spatialCache.interpolatePosition(position, e, interp), moveTarget.target, RenderMoveTarget.targetProps, this.viewport);
     });
   }
 

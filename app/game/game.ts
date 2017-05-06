@@ -3,7 +3,7 @@ import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
 
-import { CachePosition, CacheRotation } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 import { MoveKinematic } from "../systems/moveKinematic";
 import { MoveTo } from "../systems/moveTo";
 import { ChooseRandomMoveTarget } from "../systems/randomMoveTarget";
@@ -57,6 +57,7 @@ export class Game
       const now = performance.now();
       const dt = (now - this.lastUpdate) / 1000;
       this.lastUpdate = now;
+      this.spatialCache.update(this.entityContainer);
       this.update(dt);
     };
 
@@ -92,6 +93,7 @@ export class Game
       const now = performance.now();
       const dt = (now - this.lastUpdate) / 1000;
       this.lastUpdate = now;
+      this.spatialCache.update(this.entityContainer);
       this.update(dt);
     };
 
@@ -127,7 +129,7 @@ export class Game
     setTimeout(sendUpdatesFn, 1000 / netTickRate);
   }
 
-  startMultiplayerClient(fps : number, client : Network.Client) : void
+  startMultiplayerClient(fps : number, netTickRate : number, client : Network.Client) : void
   {
     this.setUpClientSystems();
 
@@ -137,21 +139,12 @@ export class Game
     this.lastUpdate = performance.now();
     this.lastDraw = performance.now();
 
-    let updateFn = () =>
-    {
-      setTimeout(updateFn, 1000 / this.fps);
-      const now = performance.now();
-      const dt = (now - this.lastUpdate) / 1000;
-      this.lastUpdate = now;
-      this.update(dt);
-    };
-
     let drawFn = (now : any) =>
     {
       requestAnimationFrame(drawFn);
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
-      const interp = this.fps * (now - this.lastUpdate) / 1000;
+      const interp = netTickRate * (now - this.lastUpdate) / 1000;
       this.draw(dt, interp);
     };
 
@@ -160,13 +153,14 @@ export class Game
       let { ack, delta } = data;
       if (ack > ackCounter)
       {
+        this.lastUpdate = performance.now();
+        this.spatialCache.update(this.entityContainer);
         NetworkSync.applyDelta(this.entityContainer.entities, NetworkSync.deserialize(delta));
         ackCounter = ack;
       }
       client.send({ ack });
     });
 
-    setTimeout(updateFn, 1000 / this.fps);
     requestAnimationFrame(drawFn);
   }
 
@@ -218,8 +212,6 @@ export class Game
 
     this.updateSystems =
     [
-      new CachePosition(this.entityContainer),
-      new CacheRotation(this.entityContainer),
       new ChooseRandomMoveTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
       new MoveTo(this.entityContainer, 50, Math.PI / 3),
       new MoveProjectiles(this.entityContainer),
@@ -230,17 +222,17 @@ export class Game
 
     this.renderSystems =
     [
-      new UpdateClickable(this.entityContainer, this.viewport),
+      new UpdateClickable(this.entityContainer, this.spatialCache, this.viewport),
       new ViewportController(this.ui, 1000, 2, this.viewport),
-      new SelectionSystem(this.entityContainer, player, this.ui, this.renderer, this.viewport),
+      new SelectionSystem(this.entityContainer, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.entityContainer, player, this.ui, this.viewport),
       new OrderAttack(this.entityContainer, player, this.ui, this.viewport),
-      new RenderMoveTarget(this.entityContainer, this.renderer, this.viewport),
-      new RenderAttackTarget(this.entityContainer, this.renderer, this.viewport),
-      new ShapeRenderer(this.entityContainer, this.renderer, this.viewport),
-      new RenderTracer(this.entityContainer, this.renderer, this.viewport),
-      new RenderHealthBar(this.entityContainer, this.renderer, this.viewport),
-      new StatusWindow(this.entityContainer, this.ui)
+      new RenderMoveTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderAttackTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new ShapeRenderer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderTracer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new StatusWindow(this.entityContainer, this.spatialCache, this.ui)
     ];
   }
 
@@ -249,9 +241,9 @@ export class Game
     this.renderSystems =
     [
       new ViewportController(this.ui, 1000, 2, this.viewport),
-      new ShapeRenderer(this.entityContainer, this.renderer, this.viewport),
-      new RenderTracer(this.entityContainer, this.renderer, this.viewport),
-      new RenderHealthBar(this.entityContainer, this.renderer, this.viewport)
+      new ShapeRenderer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderTracer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport)
     ];
   }
 
@@ -259,6 +251,7 @@ export class Game
   private lastDraw : number = 0;
   private fps : number = 0;
   private entityContainer : EntityContainer = new EntityContainer();
+  private spatialCache : SpatialCache = new SpatialCache();
   private ui : UiManager;
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];

@@ -2,7 +2,6 @@ import { Entity, EntityContainer, EntityCollection } from "../ecs/entities";
 
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
-import { Cached } from "../systems/cached";
 import { MoveToTarget } from "../systems/moveTo";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
 import { Clickable } from "../systems/clickable";

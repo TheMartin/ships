@@ -3,8 +3,7 @@ import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { Position } from "../systems/spatial";
-import { Cached } from "../systems/cached";
-import { interpolatePosition } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 import { Vec2 } from "../vec2/vec2";
 
 export class Clickable
@@ -16,16 +15,14 @@ export class Clickable
 
 export class UpdateClickable implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private viewport : Viewport) {}
+  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private viewport : Viewport) {}
 
   update(dt : number, interp : number, deferred : Deferred) : void
   {
     this.entities.forEachEntity([Clickable.t, Position.t], (e : Entity, components : any[]) =>
     {
       let [clickable, position] = components as [Clickable, Position];
-      let [cachedPos] = e.getOptionalComponents([Cached.t + Position.t]) as [Cached<Position>];
-
-      clickable.pos = this.viewport.transform(interpolatePosition(position, cachedPos, interp));
+      clickable.pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp));
     });
   }
 };

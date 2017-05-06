@@ -2,7 +2,6 @@ import { Entity, EntityContainer } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
-import { Cached } from "../systems/cached";
 
 export class SineMovement implements System
 {

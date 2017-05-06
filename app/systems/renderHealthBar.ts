@@ -3,8 +3,7 @@ import { RenderSystem } from "../ecs/renderSystem";
 import { Deferred } from "../ecs/deferred";
 import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { Position } from "../systems/spatial";
-import { Cached } from "../systems/cached";
-import { interpolatePosition } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 import { Selected } from "../systems/selection";
 import { Damageable } from "../systems/damageable";
 import { Vec2 } from "../vec2/vec2";
@@ -12,7 +11,7 @@ import { clamp } from "../util/clamp";
 
 export class RenderHealthBar implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
   update(dt : number, interp : number, deferred : Deferred) : void
   {
@@ -23,10 +22,8 @@ export class RenderHealthBar implements RenderSystem
       if (!selected && damageable.hitpoints === damageable.maxHitpoints)
         return;
 
-      let [cachedPos] = e.getOptionalComponents([Cached.t + Position.t]) as [Cached<Position>];
-
       const ratio = clamp(damageable.hitpoints / damageable.maxHitpoints, 0, 1);
-      let pos = this.viewport.transform(interpolatePosition(position, cachedPos, interp)).add(RenderHealthBar.offset);
+      let pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp)).add(RenderHealthBar.offset);
 
       this.renderer.drawRect(pos, RenderHealthBar.size.clone().elementMultiply(new Vec2(ratio, 1)).add(pos), RenderHealthBar.greenBarProps);
       this.renderer.drawRect(RenderHealthBar.size.clone().elementMultiply(new Vec2(ratio, 0)).add(pos), pos.add(RenderHealthBar.size), RenderHealthBar.redBarProps);

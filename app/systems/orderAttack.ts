@@ -6,8 +6,6 @@ import { UiManager, MouseButton, Events } from "../ui/uiManager";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
-import { Cached } from "../systems/cached";
-import { interpolatePosition } from "../systems/cacheSpatial";
 import { Controlled, Player } from "../systems/playable";
 
 import { Vec2, distance } from "../vec2/vec2";

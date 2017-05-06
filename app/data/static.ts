@@ -1,5 +1,4 @@
 import { Entity, EntityContainer } from "../ecs/entities";
-import { Cached } from "../systems/cached";
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { RenderShape } from "../systems/shapeRenderer";
@@ -54,8 +53,6 @@ export class Static
       [Velocity.t] : new Velocity(new Vec2(0, 0)),
       [AngularVelocity.t] : new AngularVelocity(0),
       [RenderShape.t] : new RenderShape(shape),
-      [Cached.t + Position.t] : new Cached<Position>(),
-      [Cached.t + Rotation.t] : new Cached<Rotation>(),
       [MoveToTarget.t] : new MoveToTarget(),
       [Selectable.t] : new Selectable(),
       [Named.t] : new Named(name),

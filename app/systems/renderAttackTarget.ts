@@ -5,13 +5,12 @@ import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
-import { Cached } from "../systems/cached";
-import { interpolatePosition } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 import { Vec2 } from "../vec2/vec2";
 
 export class RenderAttackTarget implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
   update(dt : number, interp : number, deferred : Deferred) : void
   {
@@ -26,15 +25,14 @@ export class RenderAttackTarget implements RenderSystem
       }
 
       let [targetPosition] = targetEntity.getComponents([Position.t]) as [Position];
-      let [targetCachedPos] = targetEntity.getOptionalComponents([Cached.t + Position.t]) as [Cached<Position>];
-      let targetPos = interpolatePosition(targetPosition, targetCachedPos, interp);
+      let targetPos = this.spatialCache.interpolatePosition(targetPosition, targetEntity, interp);
 
       this.renderer.drawCircle(targetPos, 10, RenderAttackTarget.targetProps, this.viewport);
       this.renderer.drawCircle(targetPos, 5, RenderAttackTarget.targetProps, this.viewport);
 
-      let [position, cachedPos] = e.getOptionalComponents([Position.t, Cached.t + Position.t]) as [Position, Cached<Position>];
+      let [position] = e.getOptionalComponents([Position.t]) as [Position];
       if (position)
-        this.renderer.drawLine(targetPos, interpolatePosition(position, cachedPos, interp), RenderAttackTarget.targetProps, this.viewport);
+        this.renderer.drawLine(targetPos, this.spatialCache.interpolatePosition(position, e, interp), RenderAttackTarget.targetProps, this.viewport);
     });
   }
 

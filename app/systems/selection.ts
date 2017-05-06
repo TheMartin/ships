@@ -4,10 +4,9 @@ import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
 
-import { Cached } from "../systems/cached";
 import { Position } from "../systems/spatial";
 import { Controlled, Player } from "../systems/playable";
-import { interpolatePosition } from "../systems/cacheSpatial";
+import { SpatialCache } from "../systems/spatialCache";
 
 import { RenderProps } from "../renderer/renderer";
 
@@ -59,7 +58,7 @@ function isSelect(selection : Selection): selection is Select
 
 export class SelectionSystem implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
+  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
     ui.addEventListener("dragstart", (e : Events.MouseDragStart) =>
     {
@@ -120,8 +119,8 @@ export class SelectionSystem implements RenderSystem
           if (controlled.player !== this.player)
             return;
 
-          let [cachedPos, selected] = e.getOptionalComponents([Cached.t + Position.t, Selected.t]) as [Cached<Position>, Selected];
-          const within = isWithin(this.viewport.transform(interpolatePosition(position, cachedPos, interp)), (<Select>this.selection).box);
+          let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];
+          const within = isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp)), (<Select>this.selection).box);
           if (!selected && within)
           {
             e.addComponent(Selected.t, new Selected());
@@ -146,7 +145,7 @@ export class SelectionSystem implements RenderSystem
     this.entities.forEachEntity([Selected.t, Position.t], (e : Entity, components : any[]) =>
     {
       let [, position] = <[Selected, Position]>(components);
-      let pos = this.viewport.transform(interpolatePosition(position, e.components[Cached.t + Position.t] as Cached<Position>, interp));
+      let pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp));
       const size = new Vec2(10, 10).multiply(this.viewport.scale);
       this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), SelectionSystem.selectedBoxProps);
     });

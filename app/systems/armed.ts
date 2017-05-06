@@ -2,7 +2,6 @@ import { Entity, EntityContainer } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
-import { Cached } from "../systems/cached";
 import { Velocity } from "../systems/kinematic";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
 import { TracerEffect } from "../systems/tracerEffect";
@@ -59,9 +58,7 @@ export class Shooting implements System
         let projectile = EntityContainer.createEntity(
         {
           [Position.t] : new Position(position.pos.clone()),
-          [Cached.t + Position.t] : new Cached<Position>(),
           [Rotation.t] : new Rotation(initialVelocity.angle()),
-          [Cached.t + Rotation.t] : new Cached<Rotation>(),
           [Velocity.t] : new Velocity(initialVelocity),
           [TracerEffect.t] : new TracerEffect(),
           [Projectile.t] : new Projectile(targetEntity, armed.range, armed.projectileSpeed, armed.damage)

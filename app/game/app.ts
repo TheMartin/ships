@@ -177,7 +177,7 @@ export class App
           client.onConnect(() =>
           {
             let game = this.readyGame((<HTMLInputElement>document.getElementById("fullscreen")).checked);
-            game.startMultiplayerClient(60, client);
+            game.startMultiplayerClient(60, 10, client);
           });
           this.connection = client;
         }),
