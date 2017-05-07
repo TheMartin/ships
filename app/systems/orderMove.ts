@@ -20,7 +20,7 @@ export class OrderMove implements RenderSystem
         this.entities.forEachEntity([Selected.t, MoveToTarget.t, Controlled.t], (e : Entity, components : any[]) =>
         {
           let [, target, controlled] = components as [Selected, MoveToTarget, Controlled];
-          if (controlled.player === this.player)
+          if (controlled.player.id === this.player.id)
             target.target = viewport.inverseTransform(event.pos);
         });
       }

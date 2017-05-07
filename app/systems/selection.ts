@@ -89,7 +89,7 @@ export class SelectionSystem implements RenderSystem
         this.entities.forEachEntity([Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
         {
           let [selectable, controlled] = components as [Selectable, Controlled];
-          if (controlled.player !== this.player)
+          if (controlled.player.id !== this.player.id)
             return;
 
           let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];
@@ -116,7 +116,7 @@ export class SelectionSystem implements RenderSystem
         this.entities.forEachEntity([Position.t, Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
         {
           let [position, , controlled] = components as [Position, Selectable, Controlled];
-          if (controlled.player !== this.player)
+          if (controlled.player.id !== this.player.id)
             return;
 
           let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];

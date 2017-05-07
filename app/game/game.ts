@@ -37,13 +37,13 @@ export class Game
 {
   constructor(private ui : UiManager, private renderer : Renderer)
   {
-    this.players = [new Player(PlayerType.Local), new Player(PlayerType.Ai)];
+    this.players = [new Player(PlayerType.Local, 0), new Player(PlayerType.Ai, 1)];
     this.viewport = new Viewport(new Vec2(0, 0), 0, 1);
   }
 
   startSingleplayer(fps : number) : void
   {
-    this.setUpSystems();
+    this.setUpSingleplayerSystems();
 
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -77,7 +77,7 @@ export class Game
 
   startMultiplayerHost(fps : number, netTickRate : number, server : Network.Server) : void
   {
-    this.setUpSystems();
+    this.setUpHostSystems();
 
     let history : { ack : number, state : EntityCollection }[] = [];
     let ackCounter = 0;
@@ -206,7 +206,7 @@ export class Game
     }
   }
 
-  private setUpSystems() : void
+  private setUpSingleplayerSystems() : void
   {
     let player = this.players[0];
     let ai = this.players[1];
@@ -236,14 +236,50 @@ export class Game
     ];
   }
 
-  private setUpClientSystems() : void
+  private setUpHostSystems() : void
   {
+    let player = this.players[0];
+
+    this.updateSystems =
+    [
+      new MoveTo(this.entityContainer, 50, Math.PI / 3),
+      new MoveProjectiles(this.entityContainer),
+      new Shooting(this.entityContainer),
+      new MoveKinematic(this.entityContainer),
+      new CheckDestroyed(this.entityContainer)
+    ];
+
     this.renderSystems =
     [
       new ViewportController(this.ui, 1000, 2, this.viewport),
+      new SelectionSystem(this.entityContainer, this.spatialCache, player, this.ui, this.renderer, this.viewport),
+      new OrderMove(this.entityContainer, player, this.ui, this.viewport),
+      new OrderAttack(this.entityContainer, player, this.ui, this.viewport),
+      new RenderMoveTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderAttackTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
       new ShapeRenderer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
       new RenderTracer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport)
+      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new StatusWindow(this.entityContainer, this.spatialCache, this.ui)
+    ];
+  }
+
+  private setUpClientSystems() : void
+  {
+    let player = this.players[1];
+
+    this.renderSystems =
+    [
+      new ViewportController(this.ui, 1000, 2, this.viewport),
+      new SelectionSystem(this.entityContainer, this.spatialCache, player, this.ui, this.renderer, this.viewport),
+      new OrderMove(this.entityContainer, player, this.ui, this.viewport),
+      new OrderAttack(this.entityContainer, player, this.ui, this.viewport),
+      new RenderMoveTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderAttackTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new ShapeRenderer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderTracer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
+      new StatusWindow(this.entityContainer, this.spatialCache, this.ui)
     ];
   }
 

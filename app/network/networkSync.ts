@@ -5,7 +5,7 @@ import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { MoveToTarget } from "../systems/moveTo";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
 import { Selectable, Selected } from "../systems/selection";
-import { Controlled } from "../systems/playable";
+import { Player, Controlled } from "../systems/playable";
 import { Named } from "../systems/named";
 import { Armed } from "../systems/armed";
 import { Projectile } from "../systems/projectile";
@@ -19,12 +19,14 @@ import { Vec2 } from "../vec2/vec2";
 
 class NetworkSyncFn
 {
-  private static table : { [key : string] : {
-    equal : (lhs : any, rhs : any) => boolean;
-    clone : (component : any) => any;
-    serialize : (component : any) => any[];
-    deserialize : (data : any[]) => any;
-  } } = {
+  private static table : {
+    [key : string] : {
+      equal : (lhs : any, rhs : any) => boolean;
+      clone : (component : any) => any;
+      serialize : (component : any) => any[];
+      deserialize : (data : any[]) => any;
+    }
+  } = {
     [Position.t] : {
       equal : (lhs : Position, rhs : Position) => lhs.pos.equal(rhs.pos),
       clone : (pos : Position) => new Position(pos.pos.clone()),
@@ -53,11 +55,77 @@ class NetworkSyncFn
       deserialize : data => new AngularVelocity(data[0])
     },
 
+    [Controlled.t] : {
+      equal : (lhs : Controlled, rhs : Controlled) => lhs.player.id === rhs.player.id,
+      clone : (ctrl : Controlled) => new Controlled(ctrl.player),
+      serialize : (ctrl : Controlled) => [ ctrl.player.type, ctrl.player.id ],
+      deserialize : data => new Controlled(new Player(data[0], data[1]))
+    },
+
     [Damageable.t] : {
       equal : (lhs : Damageable, rhs : Damageable) => lhs.hitpoints === rhs.hitpoints && lhs.maxHitpoints === rhs.maxHitpoints,
       clone : (dmg : Damageable) => damaged(dmg.maxHitpoints, dmg.hitpoints),
       serialize : (dmg : Damageable) => [ dmg.maxHitpoints, dmg.hitpoints ],
       deserialize : data => { return damaged(data[0], data[1]); }
+    },
+
+    [Selectable.t] : {
+      equal : (lhs : Selectable, rhs : Selectable) => true,
+      clone : () => new Selectable(),
+      serialize : () => null,
+      deserialize : data => new Selectable()
+    },
+
+    [Targetable.t] : {
+      equal : (lhs : Targetable, rhs : Targetable) => true,
+      clone : () => new Targetable(),
+      serialize : () => null,
+      deserialize : data => new Targetable()
+    },
+
+    [Named.t] : {
+      equal : (lhs : Named, rhs : Named) => lhs.name === rhs.name,
+      clone : (name : Named) => new Named(name.name),
+      serialize : (name : Named) => [ name.name ],
+      deserialize : data => new Named(data[0])
+    },
+
+    [MoveToTarget.t] : {
+      equal : (lhs : MoveToTarget, rhs : MoveToTarget) => (lhs.target && rhs.target && lhs.target.equal(rhs.target)) || (lhs.target === rhs.target),
+      clone : (tgt : MoveToTarget) =>
+      {
+        let target = new MoveToTarget();
+        if (tgt.target)
+          target.target = tgt.target.clone();
+
+        return target;
+      },
+      serialize : (tgt : MoveToTarget) => tgt.target ? [ tgt.target.x, tgt.target.y ] : [ null ],
+      deserialize : data =>
+      {
+        let tgt = new MoveToTarget();
+        if (data[0] !== null)
+          tgt.target = new Vec2(data[0], data[1]);
+
+        return tgt;
+      }
+    },
+
+    [AttackTarget.t] : {
+      equal : (lhs : AttackTarget, rhs : AttackTarget) => lhs.target === rhs.target,
+      clone : (tgt : AttackTarget) =>
+      {
+        let target = new AttackTarget();
+        target.target = tgt.target;
+        return target;
+      },
+      serialize : (tgt : AttackTarget) => [ tgt.target ],
+      deserialize : data =>
+      {
+        let tgt = new AttackTarget();
+        tgt.target = data[0];
+        return tgt;
+      }
     },
 
     [RenderShape.t] : {

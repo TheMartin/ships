@@ -25,12 +25,12 @@ export class OrderAttack implements RenderSystem
             continue;
 
           let [controlled, targetable] = components as [Controlled, Targetable];
-          if (controlled.player !== this.player)
+          if (controlled.player.id !== this.player.id)
           {
             this.entities.forEachEntity([Selected.t, AttackTarget.t, Controlled.t], (e : Entity, components : any[]) =>
             {
               let [, attackTarget, controlled] = components as [Selected, AttackTarget, Controlled];
-              if (controlled.player === this.player)
+              if (controlled.player.id === this.player.id)
                 attackTarget.setTarget(entity);
             });
             break;

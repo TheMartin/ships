@@ -7,7 +7,7 @@ export enum PlayerType
 
 export class Player
 {
-  constructor(public type : PlayerType) {}
+  constructor(public type : PlayerType, public id : number) {}
 };
 
 export class Controlled
