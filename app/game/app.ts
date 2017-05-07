@@ -1,4 +1,5 @@
 import { Game } from "../game/game";
+import { UiManager } from "../ui/uiManager";
 import { Renderer } from "../renderer/renderer";
 import * as Fullscreen from "../util/fullscreen";
 import { VdomNode, VdomElement, updateElementChildren } from "../vdom/vdom";
@@ -73,7 +74,8 @@ export class App
 
     this.$root.appendChild(canvas);
     let renderer = new Renderer(canvas);
-    return new Game(this.$root, canvas, renderer);
+    let ui = new UiManager(this.$root, canvas);
+    return new Game(ui, renderer);
   }
 
   private render() : void

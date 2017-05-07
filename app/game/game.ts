@@ -16,7 +16,6 @@ import { ViewportController } from "../systems/viewportController";
 import { Player, PlayerType } from "../systems/playable";
 import { RenderAttackTarget } from "../systems/renderAttackTarget";
 import { OrderAttack } from "../systems/orderAttack";
-import { UpdateClickable } from "../systems/clickable";
 import { Shooting } from "../systems/armed";
 import { MoveProjectiles } from "../systems/projectile";
 import { CheckDestroyed } from "../systems/damageable";
@@ -36,9 +35,8 @@ import { shuffle } from "../util/shuffle";
 
 export class Game
 {
-  constructor(rootElement : HTMLElement, canvas : HTMLCanvasElement, private renderer : Renderer)
+  constructor(private ui : UiManager, private renderer : Renderer)
   {
-    this.ui = new UiManager(this.entityContainer, rootElement, canvas);
     this.players = [new Player(PlayerType.Local), new Player(PlayerType.Ai)];
     this.viewport = new Viewport(new Vec2(0, 0), 0, 1);
   }
@@ -67,6 +65,7 @@ export class Game
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
       const interp = this.fps * (now - this.lastUpdate) / 1000;
+      this.ui.updateClickables(this.entityContainer, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
     };
 
@@ -103,6 +102,7 @@ export class Game
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
       const interp = this.fps * (now - this.lastUpdate) / 1000;
+      this.ui.updateClickables(this.entityContainer, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
     };
 
@@ -145,6 +145,7 @@ export class Game
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
       const interp = netTickRate * (now - this.lastUpdate) / 1000;
+      this.ui.updateClickables(this.entityContainer, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
     };
 
@@ -222,7 +223,6 @@ export class Game
 
     this.renderSystems =
     [
-      new UpdateClickable(this.entityContainer, this.spatialCache, this.viewport),
       new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.entityContainer, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.entityContainer, player, this.ui, this.viewport),
@@ -252,7 +252,6 @@ export class Game
   private fps : number = 0;
   private entityContainer : EntityContainer = new EntityContainer();
   private spatialCache : SpatialCache = new SpatialCache();
-  private ui : UiManager;
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];
   private viewport : Viewport = Viewport.identity;

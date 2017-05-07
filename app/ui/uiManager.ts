@@ -1,5 +1,9 @@
 import { Entity, EntityContainer } from "../ecs/entities";
-import { Clickable } from "../systems/clickable";
+import { Viewport } from "../renderer/renderer";
+import { SpatialCache } from "../systems/spatialCache";
+import { Position } from "../systems/spatial";
+import { Selectable } from "../systems/selection";
+import { Targetable } from "../systems/attackTarget";
 import { Vec2, distance } from "../vec2/vec2";
 
 export enum MouseButton
@@ -53,12 +57,17 @@ export namespace Events
   };
 }
 
+class Clickable
+{
+  constructor(public e : Entity, public pos : Vec2, public radius : number) {}
+};
+
 type EventListener<EventType> = (event : EventType) => void;
 type ErasedEventListener = (event : any) => void;
 
 export class UiManager
 {
-  constructor(private entities : EntityContainer, private rootElement : HTMLElement, private canvas : HTMLCanvasElement)
+  constructor(private rootElement : HTMLElement, private canvas : HTMLCanvasElement)
   {
     this.mousePos = new Vec2(this.canvas.width / 2, this.canvas.height / 2);
 
@@ -73,11 +82,10 @@ export class UiManager
       let button = domButtonToMouseButton(e.button);
       if (this.mouseButtons[button] === ButtonState.Clicked)
       {
-        const entities = this.entities.filterEntities([Clickable.t], (e : Entity, components : any[]) =>
-        {
-          let [clickable] = components as [Clickable];
-          return clickable.pos && distance(clickable.pos, pos) < clickable.radius;
-        });
+        const entities = Object.keys(this.clickables)
+          .filter(id => distance(this.clickables[id].pos, pos) < this.clickables[id].radius)
+          .map(id => this.clickables[id].e);
+
         if (entities.length > 0)
         {
           this.invokeListeners("entityclick", { entities, button });
@@ -175,6 +183,20 @@ export class UiManager
     return this.mousePos;
   }
 
+  updateClickables(entities : EntityContainer, spatialCache : SpatialCache, interp : number, viewport : Viewport) : void
+  {
+    this.clickables = {};
+    entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
+    {
+      let [position] = components as [Position];
+      if (e.getOptionalComponents([Selectable.t, Targetable.t]).length > 0)
+      {
+        let pos = viewport.transform(spatialCache.interpolatePosition(position, e, interp));
+        this.clickables[e.id] = new Clickable(e, pos, 15);
+      }
+    });
+  }
+
   private invokeListeners(type : string, e : any)
   {
     if (!(type in this.listeners))
@@ -186,6 +208,7 @@ export class UiManager
 
   private mouseButtons : ButtonState[] = [ButtonState.Up, ButtonState.Up, ButtonState.Up];
   private mousePos : Vec2 = new Vec2(0, 0);
+  private clickables : { [id : number] : Clickable } = {};
   private listeners : { [type : string] : ErasedEventListener[] } = {
     entityclick : [],
     click : [],

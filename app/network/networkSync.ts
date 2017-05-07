@@ -4,7 +4,6 @@ import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { MoveToTarget } from "../systems/moveTo";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
-import { Clickable } from "../systems/clickable";
 import { Selectable, Selected } from "../systems/selection";
 import { Controlled } from "../systems/playable";
 import { Named } from "../systems/named";

@@ -7,7 +7,6 @@ import { Selectable } from "../systems/selection";
 import { Named } from "../systems/named";
 import { Controlled, Player } from "../systems/playable";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
-import { Clickable } from "../systems/clickable";
 import { Armed } from "../systems/armed";
 import { Damageable } from "../systems/damageable";
 
@@ -59,7 +58,6 @@ export class Static
       [Controlled.t] : new Controlled(player),
       [Targetable.t] : new Targetable(),
       [AttackTarget.t] : new AttackTarget(),
-      [Clickable.t] : new Clickable(15),
       [Armed.t] : new Armed(0.75, 1000, 350, 20),
       [Damageable.t] : new Damageable(300)
     });
