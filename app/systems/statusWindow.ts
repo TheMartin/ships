@@ -44,16 +44,16 @@ function entityName(e : Entity) : string
 
 export class StatusWindow implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private ui : UiManager)
+  constructor(private spatialCache : SpatialCache, private ui : UiManager)
   {
     this.elem = VdomElement.create("div", {"class" : "window"});
     this.$elem = createElement(this.elem) as HTMLElement;
   }
 
-  update(dt : number, interp : number, deferred : Deferred) : void
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
   {
     let elem = VdomElement.create("div", {"class" : "window"});
-    this.entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Selected.t], (e : Entity, components : any[]) =>
     {
       let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = e.getOptionalComponents(
         [Named.t, Position.t, Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
@@ -78,8 +78,8 @@ export class StatusWindow implements RenderSystem
             ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.target))
             : null,
 
-          attackTarget && this.entities.getEntity(attackTarget.target)
-            ? VdomElement.create("span", {"class" : "atk"}, entityName(this.entities.getEntity(attackTarget.target)))
+          attackTarget && entities.getEntity(attackTarget.target)
+            ? VdomElement.create("span", {"class" : "atk"}, entityName(entities.getEntity(attackTarget.target)))
             : null
         )
       );

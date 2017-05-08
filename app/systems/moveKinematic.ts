@@ -7,17 +7,15 @@ import { Vec2 } from "../vec2/vec2";
 
 export class MoveKinematic implements System
 {
-  constructor(private entities : EntityContainer) {}
-
-  update(dt : number, deferred : Deferred) : void
+  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Position.t, Velocity.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Position.t, Velocity.t], (e : Entity, components : any[]) =>
     {
       let [position, velocity] = components as [Position, Velocity];
       position.pos.add(velocity.vel.clone().multiply(dt));
     });
 
-    this.entities.forEachEntity([Rotation.t, AngularVelocity.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Rotation.t, AngularVelocity.t], (e : Entity, components : any[]) =>
     {
       let [rotation, velocity] = components as [Rotation, AngularVelocity];
       rotation.angle += velocity.vel * dt;

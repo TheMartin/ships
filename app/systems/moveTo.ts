@@ -15,11 +15,11 @@ export class MoveToTarget
 
 export class MoveTo implements System
 {
-  constructor(private entities : EntityContainer, private speed : number, private angularSpeed : number) {}
+  constructor(private speed : number, private angularSpeed : number) {}
 
-  update(dt : number, deferred : Deferred) : void
+  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Position.t, Rotation.t, Velocity.t, AngularVelocity.t, MoveToTarget.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Position.t, Rotation.t, Velocity.t, AngularVelocity.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {
       let [position, rotation, velocity, angularVelocity, target] = components as [Position, Rotation, Velocity, AngularVelocity, MoveToTarget];
       if (target.target)

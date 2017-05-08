@@ -25,22 +25,20 @@ export class Projectile
 
 export class MoveProjectiles implements System
 {
-  constructor(private entities : EntityContainer) {}
-
-  update(dt : number, deferred : Deferred) : void
+  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Position.t, Rotation.t, Velocity.t, Projectile.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Position.t, Rotation.t, Velocity.t, Projectile.t], (e : Entity, components : any[]) =>
     {
       let [position, rotation, velocity, projectile] = components as [Position, Rotation, Velocity, Projectile];
       if (projectile.lifetime < 0)
       {
-        deferred.push(() => { this.entities.removeEntity(e); });
+        deferred.push((entities : EntityContainer) => { entities.removeEntity(e); });
         return;
       }
 
       projectile.lifetime -= dt;
 
-      let targetEntity = this.entities.getEntity(projectile.target);
+      let targetEntity = entities.getEntity(projectile.target);
       if (!targetEntity)
       {
         projectile.target = null;
@@ -54,7 +52,7 @@ export class MoveProjectiles implements System
         if (damageable)
           damageable.hitpoints -= projectile.damage;
 
-        deferred.push(() => { this.entities.removeEntity(e); });
+        deferred.push((entities : EntityContainer) => { entities.removeEntity(e); });
         return;
       }
 

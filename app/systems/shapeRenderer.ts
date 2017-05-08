@@ -15,11 +15,11 @@ export class RenderShape
 
 export class ShapeRenderer implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, deferred : Deferred) : void
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([RenderShape.t, Position.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([RenderShape.t, Position.t], (e : Entity, components : any[]) =>
     {
       let [shape, position] = components as [RenderShape, Position];
       let [rotation] = e.getOptionalComponents([Rotation.t]) as [Rotation];

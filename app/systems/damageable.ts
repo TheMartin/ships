@@ -14,16 +14,14 @@ export class Damageable
 
 export class CheckDestroyed implements System
 {
-  constructor(private entities : EntityContainer) {}
-
-  update(dt : number, deferred : Deferred) : void
+  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Damageable.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Damageable.t], (e : Entity, components : any[]) =>
     {
       let [damageable] = components as [Damageable];
       if (damageable.hitpoints < 0)
       {
-        deferred.push(() => { this.entities.removeEntity(e); });
+        deferred.push(() => { entities.removeEntity(e); });
       }
     });
   }

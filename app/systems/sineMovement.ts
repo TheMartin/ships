@@ -5,13 +5,13 @@ import { Position, Rotation } from "../systems/spatial";
 
 export class SineMovement implements System
 {
-  constructor(private entities : EntityContainer, private xMin : number, private xMax : number, private y0 : number)
+  constructor(private xMin : number, private xMax : number, private y0 : number)
   {
   }
 
-  update(dt : number, deferred : Deferred) : void
+  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
     {
       let [position] = components as [Position];
       let pos = position.pos;

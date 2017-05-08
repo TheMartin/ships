@@ -18,11 +18,9 @@ export class Armed
 
 export class Shooting implements System
 {
-  constructor(private entities : EntityContainer) {}
-
-  update(dt : number, deferred : Deferred) : void
+  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Position.t, AttackTarget.t, Armed.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Position.t, AttackTarget.t, Armed.t], (e : Entity, components : any[]) =>
     {
       let [position, target, armed] = components as [Position, AttackTarget, Armed];
       armed.cooldownRemaining = armed.cooldownRemaining - dt;
@@ -35,7 +33,7 @@ export class Shooting implements System
       else if (armed.cooldownRemaining > 0)
         return;
 
-      let targetEntity = this.entities.getEntity(target.target);
+      let targetEntity = entities.getEntity(target.target);
       if (!targetEntity)
       {
         target.target = null;
@@ -50,7 +48,7 @@ export class Shooting implements System
       let [targetVel] = targetEntity.getOptionalComponents([Velocity.t]) as [Velocity];
 
       armed.cooldownRemaining = Math.max(armed.cooldown - delta, 0);
-      deferred.push(() =>
+      deferred.push((entities : EntityContainer) =>
       {
         let intercept = interceptVector(targetPos.pos, targetVel ? targetVel.vel : Vec2.zero, position.pos, armed.projectileSpeed);
         let initialVelocity = intercept ? intercept : toTarget.normalized().multiply(armed.projectileSpeed);
@@ -64,7 +62,7 @@ export class Shooting implements System
           [Projectile.t] : new Projectile(targetEntity, armed.range, armed.projectileSpeed, armed.damage)
         });
 
-        this.entities.addEntity(projectile);
+        entities.addEntity(projectile);
       });
     });
   }

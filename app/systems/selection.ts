@@ -3,6 +3,7 @@ import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
+import { UserEvent, UserInputQueue } from "../ui/userInputQueue";
 
 import { Position } from "../systems/spatial";
 import { Controlled, Player } from "../systems/playable";
@@ -42,24 +43,77 @@ function isWithin(v : Vec2, box : Box) : boolean
     && v.y <= box.max.y;
 };
 
-class Select
+export class SelectSingle implements UserEvent
 {
-  constructor(public box : Box) {}
+  constructor(public entity : number) {}
+  name : string = "SelectSingle";
 };
 
-class Unselect {};
-
-type Selection = Select | Unselect;
-
-function isSelect(selection : Selection): selection is Select
+export class SelectBox implements UserEvent
 {
-  return (<Select>selection).box !== undefined;
+  constructor(public box : Box) {}
+  name : string = "SelectBox";
+};
+
+export class Unselect implements UserEvent
+{
+  name : string = "Unselect";
 };
 
 export class SelectionSystem implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
+  constructor(inputQueue : UserInputQueue, private spatialCache : SpatialCache, player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
+    inputQueue.setHandler("SelectSingle", (evt : SelectSingle, interp : number, entities : EntityContainer) =>
+    {
+      entities.forEachEntity([Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
+      {
+        let [selectable, controlled] = components as [Selectable, Controlled];
+        if (controlled.player.id !== player.id)
+          return;
+
+        let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];
+
+        if (!selected && e.id === evt.entity)
+        {
+          e.addComponent(Selected.t, new Selected());
+        }
+        else if (selected && e.id !== evt.entity)
+        {
+          e.removeComponent(Selected.t);
+        }
+      });
+    });
+
+    inputQueue.setHandler("Unselect", (evt : Unselect, interp : number, entities : EntityContainer) =>
+    {
+      entities.forEachEntity([], (e : Entity, components : any[]) =>
+      {
+        e.removeComponent(Selected.t);
+      });
+    });
+
+    inputQueue.setHandler("SelectBox", (evt : SelectBox, interp : number, entities : EntityContainer) =>
+    {
+      entities.forEachEntity([Position.t, Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
+      {
+        let [position, , controlled] = components as [Position, Selectable, Controlled];
+        if (controlled.player.id !== player.id)
+          return;
+
+        let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];
+        const within = isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp)), evt.box);
+        if (!selected && within)
+        {
+          e.addComponent(Selected.t, new Selected());
+        }
+        else if (selected && !within)
+        {
+          e.removeComponent(Selected.t);
+        }
+      });
+    });
+
     ui.addEventListener("dragstart", (e : Events.MouseDragStart) =>
     {
       if (e.button === MouseButton.Left)
@@ -70,7 +124,7 @@ export class SelectionSystem implements RenderSystem
     {
       if (e.button === MouseButton.Left)
       {
-        this.selection = new Select(new Box(this.viewport.transform(this.dragStart), this.dragCurrent));
+        inputQueue.enqueue(new SelectBox(new Box(this.viewport.transform(this.dragStart), this.dragCurrent)));
         this.dragStart = null;
         this.dragCurrent = null;
       }
@@ -79,77 +133,18 @@ export class SelectionSystem implements RenderSystem
     ui.addEventListener("click", (e : Events.MouseClick) =>
     {
       if (e.button === MouseButton.Left)
-        this.selection = new Unselect();
+        inputQueue.enqueue(new Unselect());
     });
 
-    ui.addEventListener("entityclick", (evt : Events.EntityClick) =>
+    ui.addEventListener("entityclick", (e : Events.EntityClick) =>
     {
-      if (evt.button === MouseButton.Left)
-      {
-        this.entities.forEachEntity([Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
-        {
-          let [selectable, controlled] = components as [Selectable, Controlled];
-          if (controlled.player.id !== this.player.id)
-            return;
-
-          let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];
-
-          if (!selected && e === evt.entities[0])
-          {
-            e.addComponent(Selected.t, new Selected());
-          }
-          else if (selected && e !== evt.entities[0])
-          {
-            e.removeComponent(Selected.t);
-          }
-        });
-      }
+      if (e.button === MouseButton.Left)
+        inputQueue.enqueue(new SelectSingle(e.entities[0].id));
     });
   }
 
-  update(dt : number, interp : number, deferred : Deferred) : void
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    if (this.selection)
-    {
-      if (isSelect(this.selection))
-      {
-        this.entities.forEachEntity([Position.t, Selectable.t, Controlled.t], (e : Entity, components : any[]) =>
-        {
-          let [position, , controlled] = components as [Position, Selectable, Controlled];
-          if (controlled.player.id !== this.player.id)
-            return;
-
-          let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];
-          const within = isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp)), (<Select>this.selection).box);
-          if (!selected && within)
-          {
-            e.addComponent(Selected.t, new Selected());
-          }
-          else if (selected && !within)
-          {
-            e.removeComponent(Selected.t);
-          }
-        });
-      }
-      else
-      {
-        this.entities.forEachEntity([], (e : Entity, components : any[]) =>
-        {
-          e.removeComponent(Selected.t);
-        });
-      }
-
-      this.selection = null;
-    }
-
-    this.entities.forEachEntity([Selected.t, Position.t], (e : Entity, components : any[]) =>
-    {
-      let [, position] = <[Selected, Position]>(components);
-      let pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp));
-      const size = new Vec2(10, 10).multiply(this.viewport.scale);
-      this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), SelectionSystem.selectedBoxProps);
-    });
-
     if (this.dragStart)
     {
       const mousePos = this.ui.mousePosition();
@@ -157,18 +152,34 @@ export class SelectionSystem implements RenderSystem
         this.dragCurrent = this.ui.mousePosition().clone();
 
       if (this.dragCurrent)
-        this.renderer.drawRect(this.viewport.transform(this.dragStart), this.dragCurrent, SelectionSystem.selectionBoxProps);
+        this.renderer.drawRect(this.viewport.transform(this.dragStart), this.dragCurrent, SelectionSystem.props);
     }
   }
 
   private dragStart : Vec2;
   private dragCurrent : Vec2;
-  private selection : Select | Unselect;
-  private static readonly selectedBoxProps : RenderProps = { stroke : "rgb(0, 255, 0)", lineWidth: 3 };
-  private static readonly selectionBoxProps : RenderProps =
+  private static readonly props : RenderProps =
     {
       stroke : "rgb(0, 255, 0)",
       lineWidth : 1,
       fillColor : "rgba(0, 255, 0, 0.2)"
     };
+};
+
+export class DrawSelectedBox implements RenderSystem
+{
+  constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
+
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
+  {
+    entities.forEachEntity([Selected.t, Position.t], (e : Entity, components : any[]) =>
+    {
+      let [, position] = <[Selected, Position]>(components);
+      let pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, e, interp));
+      const size = new Vec2(10, 10).multiply(this.viewport.scale);
+      this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), DrawSelectedBox.props);
+    });
+  }
+
+  private static readonly props : RenderProps = { stroke : "rgb(0, 255, 0)", lineWidth: 3 };
 };

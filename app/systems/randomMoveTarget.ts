@@ -7,14 +7,14 @@ import { Vec2 } from "../vec2/vec2";
 
 export class ChooseRandomMoveTarget implements System
 {
-  constructor(private entities : EntityContainer, private player : Player, private min : Vec2, max : Vec2)
+  constructor(private player : Player, private min : Vec2, max : Vec2)
   {
     this.size = max.clone().subtract(min);
   }
 
-  update(dt : number, deferred : Deferred) : void
+  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([MoveToTarget.t, Controlled.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([MoveToTarget.t, Controlled.t], (e : Entity, components : any[]) =>
     {
       let [target, controlled] = components as [MoveToTarget, Controlled];
       if (controlled.player.id === this.player.id && !target.target)

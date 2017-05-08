@@ -9,7 +9,7 @@ import { MoveTo } from "../systems/moveTo";
 import { ChooseRandomMoveTarget } from "../systems/randomMoveTarget";
 import { RenderMoveTarget } from "../systems/renderMoveTarget";
 import { OrderMove } from "../systems/orderMove";
-import { SelectionSystem } from "../systems/selection";
+import { SelectionSystem, DrawSelectedBox } from "../systems/selection";
 import { ShapeRenderer } from "../systems/shapeRenderer";
 import { StatusWindow } from "../systems/statusWindow";
 import { ViewportController } from "../systems/viewportController";
@@ -23,6 +23,7 @@ import { RenderTracer } from "../systems/tracerEffect";
 import { RenderHealthBar } from "../systems/renderHealthBar";
 
 import { UiManager } from "../ui/uiManager";
+import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
@@ -170,9 +171,9 @@ export class Game
     let deferred = new Deferred();
     for (let system of this.updateSystems)
     {
-      system.update(dt, deferred);
+      system.update(dt, this.entityContainer, deferred);
     }
-    deferred.flush();
+    deferred.flush(this.entityContainer);
   }
 
   draw(dt : number, interp : number) : void
@@ -182,9 +183,10 @@ export class Game
 
     for (let system of this.renderSystems)
     {
-      system.update(dt, interp, deferred);
+      system.update(dt, interp, this.entityContainer, deferred);
     }
-    deferred.flush();
+    deferred.flush(this.entityContainer);
+    this.inputQueue.flush(interp, this.entityContainer);
   }
 
   private setUpScenario() : void
@@ -213,26 +215,27 @@ export class Game
 
     this.updateSystems =
     [
-      new ChooseRandomMoveTarget(this.entityContainer, ai, new Vec2(0, 0), new Vec2(1000, 1000)),
-      new MoveTo(this.entityContainer, 50, Math.PI / 3),
-      new MoveProjectiles(this.entityContainer),
-      new Shooting(this.entityContainer),
-      new MoveKinematic(this.entityContainer),
-      new CheckDestroyed(this.entityContainer)
+      new ChooseRandomMoveTarget(ai, new Vec2(0, 0), new Vec2(1000, 1000)),
+      new MoveTo(50, Math.PI / 3),
+      new MoveProjectiles(),
+      new Shooting(),
+      new MoveKinematic(),
+      new CheckDestroyed()
     ];
 
     this.renderSystems =
     [
       new ViewportController(this.ui, 1000, 2, this.viewport),
-      new SelectionSystem(this.entityContainer, this.spatialCache, player, this.ui, this.renderer, this.viewport),
-      new OrderMove(this.entityContainer, player, this.ui, this.viewport),
-      new OrderAttack(this.entityContainer, player, this.ui, this.viewport),
-      new RenderMoveTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderAttackTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new ShapeRenderer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderTracer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new StatusWindow(this.entityContainer, this.spatialCache, this.ui)
+      new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
+      new OrderMove(this.inputQueue, player, this.ui, this.viewport),
+      new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
+      new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
+      new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
+      new RenderAttackTarget(this.spatialCache, this.renderer, this.viewport),
+      new ShapeRenderer(this.spatialCache, this.renderer, this.viewport),
+      new RenderTracer(this.spatialCache, this.renderer, this.viewport),
+      new RenderHealthBar(this.spatialCache, this.renderer, this.viewport),
+      new StatusWindow(this.spatialCache, this.ui)
     ];
   }
 
@@ -242,25 +245,26 @@ export class Game
 
     this.updateSystems =
     [
-      new MoveTo(this.entityContainer, 50, Math.PI / 3),
-      new MoveProjectiles(this.entityContainer),
-      new Shooting(this.entityContainer),
-      new MoveKinematic(this.entityContainer),
-      new CheckDestroyed(this.entityContainer)
+      new MoveTo(50, Math.PI / 3),
+      new MoveProjectiles(),
+      new Shooting(),
+      new MoveKinematic(),
+      new CheckDestroyed()
     ];
 
     this.renderSystems =
     [
       new ViewportController(this.ui, 1000, 2, this.viewport),
-      new SelectionSystem(this.entityContainer, this.spatialCache, player, this.ui, this.renderer, this.viewport),
-      new OrderMove(this.entityContainer, player, this.ui, this.viewport),
-      new OrderAttack(this.entityContainer, player, this.ui, this.viewport),
-      new RenderMoveTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderAttackTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new ShapeRenderer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderTracer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new StatusWindow(this.entityContainer, this.spatialCache, this.ui)
+      new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
+      new OrderMove(this.inputQueue, player, this.ui, this.viewport),
+      new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
+      new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
+      new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
+      new RenderAttackTarget(this.spatialCache, this.renderer, this.viewport),
+      new ShapeRenderer(this.spatialCache, this.renderer, this.viewport),
+      new RenderTracer(this.spatialCache, this.renderer, this.viewport),
+      new RenderHealthBar(this.spatialCache, this.renderer, this.viewport),
+      new StatusWindow(this.spatialCache, this.ui)
     ];
   }
 
@@ -271,15 +275,16 @@ export class Game
     this.renderSystems =
     [
       new ViewportController(this.ui, 1000, 2, this.viewport),
-      new SelectionSystem(this.entityContainer, this.spatialCache, player, this.ui, this.renderer, this.viewport),
-      new OrderMove(this.entityContainer, player, this.ui, this.viewport),
-      new OrderAttack(this.entityContainer, player, this.ui, this.viewport),
-      new RenderMoveTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderAttackTarget(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new ShapeRenderer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderTracer(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new RenderHealthBar(this.entityContainer, this.spatialCache, this.renderer, this.viewport),
-      new StatusWindow(this.entityContainer, this.spatialCache, this.ui)
+      new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
+      new OrderMove(this.inputQueue, player, this.ui, this.viewport),
+      new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
+      new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
+      new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
+      new RenderAttackTarget(this.spatialCache, this.renderer, this.viewport),
+      new ShapeRenderer(this.spatialCache, this.renderer, this.viewport),
+      new RenderTracer(this.spatialCache, this.renderer, this.viewport),
+      new RenderHealthBar(this.spatialCache, this.renderer, this.viewport),
+      new StatusWindow(this.spatialCache, this.ui)
     ];
   }
 
@@ -292,4 +297,5 @@ export class Game
   private renderSystems : RenderSystem[] = [];
   private viewport : Viewport = Viewport.identity;
   private players : Player[] = [];
+  private inputQueue : UserInputQueue = new UserInputQueue();
 };

@@ -10,14 +10,14 @@ import { Vec2 } from "../vec2/vec2";
 
 export class RenderAttackTarget implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, deferred : Deferred) : void
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Selected.t, AttackTarget.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Selected.t, AttackTarget.t], (e : Entity, components : any[]) =>
     {
       let [, attackTarget] = components as [Selected, AttackTarget];
-      let targetEntity = this.entities.getEntity(attackTarget.target);
+      let targetEntity = entities.getEntity(attackTarget.target);
       if (!targetEntity)
       {
         attackTarget.target = null;
@@ -25,6 +25,7 @@ export class RenderAttackTarget implements RenderSystem
       }
 
       let [targetPosition] = targetEntity.getComponents([Position.t]) as [Position];
+      console.assert(targetPosition);
       let targetPos = this.spatialCache.interpolatePosition(targetPosition, targetEntity, interp);
 
       this.renderer.drawCircle(targetPos, 10, RenderAttackTarget.targetProps, this.viewport);

@@ -10,11 +10,11 @@ import { Vec2 } from "../vec2/vec2";
 
 export class RenderMoveTarget implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, deferred : Deferred) : void
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Selected.t, MoveToTarget.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Selected.t, MoveToTarget.t], (e : Entity, components : any[]) =>
     {
       let [, moveTarget] = components as [Selected, MoveToTarget];
       if (!moveTarget.target)

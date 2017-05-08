@@ -11,11 +11,11 @@ import { clamp } from "../util/clamp";
 
 export class RenderHealthBar implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, deferred : Deferred) : void
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Position.t, Damageable.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Position.t, Damageable.t], (e : Entity, components : any[]) =>
     {
       let [position, damageable] = components as [Position, Damageable];
       let [selected] = e.getOptionalComponents([Selected.t]) as [Selected];

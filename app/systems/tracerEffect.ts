@@ -14,11 +14,11 @@ export class TracerEffect
 
 export class RenderTracer implements RenderSystem
 {
-  constructor(private entities : EntityContainer, private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
+  constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, deferred : Deferred) : void
+  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
   {
-    this.entities.forEachEntity([Position.t, Velocity.t, TracerEffect.t], (e : Entity, components : any[]) =>
+    entities.forEachEntity([Position.t, Velocity.t, TracerEffect.t], (e : Entity, components : any[]) =>
     {
       let [position, velocity,] = components as [Position, Velocity, TracerEffect];
 
