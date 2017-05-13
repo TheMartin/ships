@@ -30,24 +30,34 @@ body {
   color: #ffffff;
 }
 
-ul.menu {
+.menu {
   position: absolute;
-  display: inline-block;
+  display: block;
   left: 20%;
   bottom: 15%;
+  font-family: "Consolas";
+  font-size: 130%;
+  color: #ffffff;
+}
+
+.menu ul {
   list-style: none;
 }
 
 .menu li {
+  display: block;
   margin-top: 15px;
 }
 
+textarea, .menu label {
+  display: block;
+}
+
 .btn {
-  font-family: "Consolas";
-  font-size: 130%;
-  color: #ffffff;
+  display: inline-block;
   text-decoration: none;
   padding: 3px;
+  color: #ffffff;
 }
 
 .btn:hover {
