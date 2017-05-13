@@ -1,4 +1,3 @@
-import { Entity, EntityContainer } from "../ecs/entities";
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { RenderShape } from "../systems/shapeRenderer";
@@ -46,7 +45,7 @@ export class Static
 
   static makeShip(pos : Vec2, rot : number, name : string, shape : Shape, player : Player)
   {
-    return EntityContainer.createEntity({
+    return {
       [Position.t] : new Position(pos),
       [Rotation.t] : new Rotation(rot),
       [Velocity.t] : new Velocity(new Vec2(0, 0)),
@@ -60,6 +59,6 @@ export class Static
       [AttackTarget.t] : new AttackTarget(),
       [Armed.t] : new Armed(0.75, 1000, 350, 20),
       [Damageable.t] : new Damageable(300)
-    });
+    };
   };
 };

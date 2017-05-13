@@ -1,4 +1,4 @@
-import { Entity, EntityContainer, EntityCollection } from "../ecs/entities";
+import { World, ComponentStorage, delta, applyDelta, serialize, deserialize } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
@@ -8,31 +8,86 @@ import { MoveKinematic } from "../systems/moveKinematic";
 import { MoveTo } from "../systems/moveTo";
 import { ChooseRandomMoveTarget } from "../systems/randomMoveTarget";
 import { RenderMoveTarget } from "../systems/renderMoveTarget";
-import { OrderMove } from "../systems/orderMove";
+import { OrderMove, MoveOrder } from "../systems/orderMove";
 import { SelectionSystem, DrawSelectedBox } from "../systems/selection";
 import { ShapeRenderer } from "../systems/shapeRenderer";
 import { StatusWindow } from "../systems/statusWindow";
 import { ViewportController } from "../systems/viewportController";
 import { Player, PlayerType } from "../systems/playable";
 import { RenderAttackTarget } from "../systems/renderAttackTarget";
-import { OrderAttack } from "../systems/orderAttack";
+import { OrderAttack, AttackOrder } from "../systems/orderAttack";
 import { Shooting } from "../systems/armed";
 import { MoveProjectiles } from "../systems/projectile";
 import { CheckDestroyed } from "../systems/damageable";
 import { RenderTracer } from "../systems/tracerEffect";
 import { RenderHealthBar } from "../systems/renderHealthBar";
 
+import { Position, Rotation } from "../systems/spatial";
+import { Velocity, AngularVelocity } from "../systems/kinematic";
+import { RenderShape } from "../systems/shapeRenderer";
+import { MoveToTarget } from "../systems/moveTo";
+import { Selected, Selectable } from "../systems/selection";
+import { Named } from "../systems/named";
+import { Controlled } from "../systems/playable";
+import { AttackTarget, Targetable } from "../systems/attackTarget";
+import { Armed } from "../systems/armed";
+import { Damageable } from "../systems/damageable";
+import { TracerEffect } from "../systems/tracerEffect";
+import { Projectile } from "../systems/projectile";
+
 import { UiManager } from "../ui/uiManager";
-import { UserInputQueue } from "../ui/userInputQueue";
+import { UserInputQueue, UserEvent } from "../ui/userInputQueue";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
 import * as Network from "../network/network";
-import * as NetworkSync from "../network/networkSync";
 
 import { Static } from "../data/static";
 
 import { shuffle } from "../util/shuffle";
+
+enum MessageType
+{
+  ServerUpdate,
+  ServerUpdateAck,
+  ClientUpdate,
+  ClientUpdateAck
+};
+
+class NetworkEventFn
+{
+  private static table : {
+    [type : string] : {
+      serialize : (e : UserEvent) => any[];
+      deserialize : (data : any[]) => UserEvent;
+    }
+  } = {
+    [MoveOrder.t] : {
+      serialize : (e : MoveOrder) => [ e.entity, e.target.x, e.target.y ],
+      deserialize : data => new MoveOrder(data[0], new Vec2(data[1], data[2]))
+    },
+    [AttackOrder.t] : {
+      serialize : (e : AttackOrder) => [ e.entity, e.target ],
+      deserialize : data => new AttackOrder(data[0], data[1])
+    }
+  };
+
+  static isNetworkedEvent(type : string) : boolean
+  {
+    return type in NetworkEventFn.table;
+  }
+
+  static serialize(e : UserEvent) : any[]
+  {
+    return NetworkEventFn.isNetworkedEvent(e.name) ? [e.name].concat(NetworkEventFn.table[e.name].serialize(e)) : null;
+  }
+
+  static deserialize(data : any[]) : UserEvent
+  {
+    let [type, ...content] = data;
+    return NetworkEventFn.isNetworkedEvent(type) ? NetworkEventFn.table[type].deserialize(content) : null;
+  }
+};
 
 export class Game
 {
@@ -40,6 +95,55 @@ export class Game
   {
     this.players = [new Player(PlayerType.Local, 0), new Player(PlayerType.Ai, 1)];
     this.viewport = new Viewport(new Vec2(0, 0), 0, 1);
+    this.componentTypes = [
+      Position.t,
+      Rotation.t,
+      Velocity.t,
+      AngularVelocity.t,
+      RenderShape.t,
+      MoveToTarget.t,
+      Selectable.t,
+      Selected.t,
+      Named.t,
+      Controlled.t,
+      Targetable.t,
+      AttackTarget.t,
+      Armed.t,
+      Damageable.t,
+      TracerEffect.t,
+      Projectile.t
+    ];
+    this.networkComponentTypes = [
+      Position.t,
+      Rotation.t,
+      Velocity.t,
+      AngularVelocity.t,
+      RenderShape.t,
+      MoveToTarget.t,
+      Selectable.t,
+      Named.t,
+      Controlled.t,
+      Targetable.t,
+      AttackTarget.t,
+      Damageable.t,
+      TracerEffect.t
+    ];
+    this.networkComponentDeserializers = new Map<string, (data : any[]) => any>([
+      [Position.t, Position.deserialize],
+      [Rotation.t, Rotation.deserialize],
+      [Velocity.t, Velocity.deserialize],
+      [AngularVelocity.t, AngularVelocity.deserialize],
+      [RenderShape.t, RenderShape.deserialize],
+      [MoveToTarget.t, MoveToTarget.deserialize],
+      [Selectable.t, Selectable.deserialize],
+      [Named.t, Named.deserialize],
+      [Controlled.t, Controlled.deserialize],
+      [Targetable.t, Targetable.deserialize],
+      [AttackTarget.t, AttackTarget.deserialize],
+      [Damageable.t, Damageable.deserialize],
+      [TracerEffect.t, TracerEffect.deserialize]
+    ]);
+    this.world = new World(this.componentTypes);
   }
 
   startSingleplayer(fps : number) : void
@@ -56,7 +160,7 @@ export class Game
       const now = performance.now();
       const dt = (now - this.lastUpdate) / 1000;
       this.lastUpdate = now;
-      this.spatialCache.update(this.entityContainer);
+      this.spatialCache.update(this.world);
       this.update(dt);
     };
 
@@ -66,7 +170,7 @@ export class Game
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
       const interp = this.fps * (now - this.lastUpdate) / 1000;
-      this.ui.updateClickables(this.entityContainer, this.spatialCache, interp, this.viewport);
+      this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
     };
 
@@ -80,8 +184,10 @@ export class Game
   {
     this.setUpHostSystems();
 
-    let history : { ack : number, state : EntityCollection }[] = [];
-    let ackCounter = 0;
+    let dummySnapshot = this.makeEmptyNetworkSnapshot();
+    let snapshotHistory : { ack : number, snapshot : Map<string, ComponentStorage> }[] = [];
+    let serverAckCounter = 0;
+    let clientAckCounter = -1;
 
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -93,7 +199,7 @@ export class Game
       const now = performance.now();
       const dt = (now - this.lastUpdate) / 1000;
       this.lastUpdate = now;
-      this.spatialCache.update(this.entityContainer);
+      this.spatialCache.update(this.world);
       this.update(dt);
     };
 
@@ -103,24 +209,47 @@ export class Game
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
       const interp = this.fps * (now - this.lastUpdate) / 1000;
-      this.ui.updateClickables(this.entityContainer, this.spatialCache, interp, this.viewport);
+      this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
     };
 
     let sendUpdatesFn = () =>
     {
       setTimeout(sendUpdatesFn, 1000 / netTickRate);
-      const state = NetworkSync.clone(this.entityContainer.entities);
-      const delta = NetworkSync.delta(history.length > 0 ? history[0].state : {}, state);
-      const ack = ackCounter++;
-      server.send({ ack , delta : NetworkSync.serialize(delta) });
-      history.push({ ack , state });
+      const snapshot = this.world.getSnapshot(this.networkComponentTypes);
+      const oldSnapshot = snapshotHistory.length > 0 ? snapshotHistory[0].snapshot : dummySnapshot;
+      const clientDelta = this.networkComponentTypes.map((key : string) : [string, ComponentStorage] => { return [key, delta(oldSnapshot.get(key), snapshot.get(key))]; });
+      const ack = serverAckCounter++;
+      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.map(([key, value] : [string, ComponentStorage]) => { return [key, serialize(value)]; }) });
+      snapshotHistory.push({ ack , snapshot });
+    };
+
+    let messageHandlers = {
+      [MessageType.ClientUpdate] : (data : any) =>
+      {
+        const { ack, history } = data;
+        if (ack > clientAckCounter)
+        {
+          for (let item of history)
+          {
+            if (item.ack > clientAckCounter)
+              item.events.forEach((e : any[]) => this.inputQueue.enqueue(NetworkEventFn.deserialize(e)));
+          }
+          clientAckCounter = ack;
+        }
+        server.send({ type : MessageType.ClientUpdateAck, ack });
+      },
+      [MessageType.ServerUpdateAck] : (data : any) =>
+      {
+        const ack = data.ack;
+        snapshotHistory = snapshotHistory.filter(item => item.ack >= ack);
+      }
     };
 
     server.onData((data : any) =>
     {
-      const { ack } = data;
-      history = history.filter(item => item.ack >= ack);
+      if (data.type in messageHandlers)
+        messageHandlers[data.type](data);
     });
 
     this.setUpScenario();
@@ -134,7 +263,23 @@ export class Game
   {
     this.setUpClientSystems();
 
-    let ackCounter = -1;
+    let serverAckCounter = -1;
+    let clientAckCounter = 0;
+
+    let unsentEvents : UserEvent[] = [];
+    let inputHistory : { ack : number, events : UserEvent[] }[] = [];
+    let handlers : { [type : string] : (e : UserEvent, interp : number, world : World) => void } = {};
+    [MoveOrder.t, AttackOrder.t].forEach(type =>
+    {
+      let handler = this.inputQueue.getHandler(type);
+      handlers[type] = handler;
+      this.inputQueue.setHandler(type, (e : UserEvent, interp : number, world : World) =>
+      {
+        handler(e, interp, world);
+        unsentEvents.push(e);
+      });
+    });
+    let snapshot = this.makeEmptyNetworkSnapshot();
 
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -146,24 +291,59 @@ export class Game
       const dt = (now - this.lastDraw) / 1000;
       this.lastDraw = now;
       const interp = netTickRate * (now - this.lastUpdate) / 1000;
-      this.ui.updateClickables(this.entityContainer, this.spatialCache, interp, this.viewport);
+      this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
+    };
+
+    let sendUpdatesFn = () =>
+    {
+      setTimeout(sendUpdatesFn, 1000 / netTickRate);
+      if (unsentEvents.length > 0)
+      {
+        const ack = clientAckCounter++;
+        inputHistory.push({ ack, events : unsentEvents });
+        unsentEvents = [];
+        let history = inputHistory.map((item : {ack : number, events : UserEvent[]}) : {ack : number, events : any[]} =>
+        {
+          return { ack : item.ack, events : item.events.map(e => NetworkEventFn.serialize(e)) };
+        });
+        client.send({ type : MessageType.ClientUpdate, ack, history });
+      }
+    };
+
+    let messageHandlers = {
+      [MessageType.ServerUpdate] : (data : any) =>
+      {
+        let { ack, delta } = data;
+        if (ack > serverAckCounter)
+        {
+          this.lastUpdate = performance.now();
+          this.spatialCache.update(this.world);
+          delta.forEach(([key, data] : [string, any[]]) : void => { applyDelta(snapshot.get(key), deserialize(data, this.networkComponentDeserializers.get(key))); });
+          this.world.replaceSnapshot(snapshot);
+          inputHistory.map(item => item.events)
+            .reduce((lhs, rhs) => lhs.concat(rhs), [])
+            .forEach(e => handlers[e.name](e, 0, this.world));
+          unsentEvents.forEach(e => handlers[e.name](e, 0, this.world));
+          serverAckCounter = ack;
+        }
+        client.send({ type : MessageType.ServerUpdateAck, ack });
+      },
+      [MessageType.ClientUpdateAck] : (data : any) =>
+      {
+        let { ack } = data;
+        inputHistory = inputHistory.filter(item => item.ack > ack);
+      }
     };
 
     client.onData((data : any) =>
     {
-      let { ack, delta } = data;
-      if (ack > ackCounter)
-      {
-        this.lastUpdate = performance.now();
-        this.spatialCache.update(this.entityContainer);
-        NetworkSync.applyDelta(this.entityContainer.entities, NetworkSync.deserialize(delta));
-        ackCounter = ack;
-      }
-      client.send({ ack });
+      if (data.type in messageHandlers)
+        messageHandlers[data.type](data);
     });
 
     requestAnimationFrame(drawFn);
+    setTimeout(sendUpdatesFn, 1000 / netTickRate);
   }
 
   update(dt : number) : void
@@ -171,9 +351,9 @@ export class Game
     let deferred = new Deferred();
     for (let system of this.updateSystems)
     {
-      system.update(dt, this.entityContainer, deferred);
+      system.update(dt, this.world, deferred);
     }
-    deferred.flush(this.entityContainer);
+    deferred.flush(this.world);
   }
 
   draw(dt : number, interp : number) : void
@@ -183,10 +363,10 @@ export class Game
 
     for (let system of this.renderSystems)
     {
-      system.update(dt, interp, this.entityContainer, deferred);
+      system.update(dt, interp, this.world, this.inputQueue, deferred);
     }
-    deferred.flush(this.entityContainer);
-    this.inputQueue.flush(interp, this.entityContainer);
+    deferred.flush(this.world);
+    this.inputQueue.flush(interp, this.world);
   }
 
   private setUpScenario() : void
@@ -200,11 +380,11 @@ export class Game
       );
     for (let i = 0; i < 5; ++i)
     {
-      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.Ship, this.players[0]) );
+      this.world.addEntity( World.nextEntityId(), Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.Ship, this.players[0]) );
     }
     for (let i = 5; i < 10; ++i)
     {
-      this.entityContainer.addEntity( Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.NeutralShip, this.players[1]) );
+      this.world.addEntity( World.nextEntityId(), Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.NeutralShip, this.players[1]) );
     }
   }
 
@@ -288,10 +468,18 @@ export class Game
     ];
   }
 
+  private makeEmptyNetworkSnapshot() : Map<string, ComponentStorage>
+  {
+    return new Map<string, ComponentStorage>( this.networkComponentTypes.map((key : string) : [string, ComponentStorage] => { return [key, new Map<number, any>()]; } ) );
+  }
+
   private lastUpdate : number = 0;
   private lastDraw : number = 0;
   private fps : number = 0;
-  private entityContainer : EntityContainer = new EntityContainer();
+  private componentTypes : string[] = [];
+  private networkComponentTypes : string[] = [];
+  private networkComponentDeserializers : Map<string, (data : any[]) => any> = null;
+  private world : World = null;
   private spatialCache : SpatialCache = new SpatialCache();
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];

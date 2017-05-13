@@ -1,20 +1,20 @@
-import { EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 
 export class Deferred
 {
-  push(fn : (entities : EntityContainer) => void) : void
+  push(fn : (world : World) => void) : void
   {
     this.queue.push(fn);
   }
 
-  flush(entities : EntityContainer) : void
+  flush(world : World) : void
   {
     for (let fn of this.queue)
     {
-      fn(entities);
+      fn(world);
     }
 
     this.queue = [];
   }
-  private queue : { (entities : EntityContainer) : void; }[] = [];
+  private queue : { (world : World) : void; }[] = [];
 };

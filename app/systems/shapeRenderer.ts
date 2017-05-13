@@ -1,15 +1,40 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
+import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Shape } from "../renderer/shape";
+import { NetworkComponent } from "../network/networkComponent";
 import { Position, Rotation } from "../systems/spatial";
 import { SpatialCache } from "../systems/spatialCache";
 import { Vec2, lerp } from "../vec2/vec2";
 
-export class RenderShape
+import { Static } from "../data/static";
+
+export class RenderShape implements NetworkComponent
 {
   constructor(public shape : Shape) {}
+
+  equal(other : RenderShape) : boolean
+  {
+    return this.shape === other.shape;
+  }
+
+  clone() : RenderShape
+  {
+    return new RenderShape(this.shape);
+  }
+
+  serialize() : any[]
+  {
+    return [ this.shape === Static.Ship ? "Ship" : "NeutralShip" ];
+  }
+
+  static deserialize(data : any[]) : RenderShape
+  {
+    return new RenderShape(Static[data[0] as string]);
+  }
+
   static readonly t : string = "RenderShape";
 };
 
@@ -17,16 +42,16 @@ export class ShapeRenderer implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
+  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    entities.forEachEntity([RenderShape.t, Position.t], (e : Entity, components : any[]) =>
+    world.forEachEntity([RenderShape.t, Position.t], (id : number, components : any[]) =>
     {
       let [shape, position] = components as [RenderShape, Position];
-      let [rotation] = e.getOptionalComponents([Rotation.t]) as [Rotation];
+      let rotation = world.getComponent(id, Rotation.t) as Rotation;
 
       this.renderer.drawShape(shape.shape,
-        this.spatialCache.interpolatePosition(position, e, interp),
-        rotation ? this.spatialCache.interpolateRotation(rotation, e, interp) : 0,
+        this.spatialCache.interpolatePosition(position, id, interp),
+        rotation ? this.spatialCache.interpolateRotation(rotation, id, interp) : 0,
         1,
         this.viewport
       );

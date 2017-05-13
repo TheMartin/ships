@@ -1,4 +1,4 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Viewport } from "../renderer/renderer";
 import { SpatialCache } from "../systems/spatialCache";
 import { Position } from "../systems/spatial";
@@ -30,7 +30,7 @@ export namespace Events
 {
   export class EntityClick
   {
-    entities : Entity[];
+    entities : number[];
     button : MouseButton;
   };
 
@@ -59,7 +59,7 @@ export namespace Events
 
 class Clickable
 {
-  constructor(public e : Entity, public pos : Vec2, public radius : number) {}
+  constructor(public id : number, public pos : Vec2, public radius : number) {}
 };
 
 type EventListener<EventType> = (event : EventType) => void;
@@ -84,7 +84,7 @@ export class UiManager
       {
         const entities = Object.keys(this.clickables)
           .filter(id => distance(this.clickables[id].pos, pos) < this.clickables[id].radius)
-          .map(id => this.clickables[id].e);
+          .map(id => this.clickables[id].id);
 
         if (entities.length > 0)
         {
@@ -183,16 +183,16 @@ export class UiManager
     return this.mousePos;
   }
 
-  updateClickables(entities : EntityContainer, spatialCache : SpatialCache, interp : number, viewport : Viewport) : void
+  updateClickables(world : World, spatialCache : SpatialCache, interp : number, viewport : Viewport) : void
   {
     this.clickables = {};
-    entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
+    world.forEachEntity([Position.t], (id : number, components : any[]) =>
     {
       let [position] = components as [Position];
-      if (e.getOptionalComponents([Selectable.t, Targetable.t]).length > 0)
+      if (world.getComponent(id, Selectable.t) || world.getComponent(id, Targetable.t))
       {
-        let pos = viewport.transform(spatialCache.interpolatePosition(position, e, interp));
-        this.clickables[e.id] = new Clickable(e, pos, 15);
+        let pos = viewport.transform(spatialCache.interpolatePosition(position, id, interp));
+        this.clickables[id] = new Clickable(id, pos, 15);
       }
     });
   }

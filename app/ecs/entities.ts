@@ -1,120 +1,179 @@
-export class Entity
+export type ComponentStorage = Map<number, any>;
+
+export function delta(lhs : ComponentStorage, rhs : ComponentStorage) : ComponentStorage
 {
-  constructor( public readonly id : number, public readonly components : { [name : string] : Object } = { } )
+  let result : ComponentStorage = new Map<number, any>();
+  for (let [id, newComponent] of rhs.entries())
   {
-  }
-
-  addComponent(name : string, component : Object) : Entity
-  {
-    this.components[name] = component;
-    return this;
-  }
-
-  removeComponent(name : string) : Entity
-  {
-    delete this.components[name];
-    return this;
-  }
-
-  getComponents(names : string[]) : any[]
-  {
-    let components : any[] = [];
-    for (let name of names)
+    let oldComponent = lhs.get(id);
+    if (!oldComponent || !oldComponent.equal(newComponent))
     {
-      if (!this.components[name])
-        return null;
-
-      components.push(this.components[name]);
+      result.set(id, newComponent);
     }
-    return components;
   }
-
-  getOptionalComponents(names : string[]) : any[]
+  for (let id of lhs.keys())
   {
-    let components : any[] = [];
-    for (let name of names)
+    if (!rhs.has(id))
     {
-      if (this.components[name])
-        components.push(this.components[name]);
+      result.set(id, null);
     }
-    return components;
+  }
+  return result;
+};
+
+export function applyDelta(components : ComponentStorage, delta : ComponentStorage) : void
+{
+  for (let [id, newComponent] of delta.entries())
+  {
+    if (newComponent === null)
+    {
+      components.delete(id);
+    }
+    else
+    {
+      components.set(id, newComponent);
+    }
   }
 };
 
-export interface EntityCollection
+export function clone(components : ComponentStorage) : ComponentStorage
 {
-  [id : number] : Entity;
-}
-
-export class EntityContainer
-{
-  static createEntity(components : { [name : string] : Object } = { }) : Entity
+  let clone : ComponentStorage = new Map<number, any>();
+  for (let [id, component] of components.entries())
   {
-    return new Entity(EntityContainer.EntityCount++, components);
+    clone.set(id, component.clone());
+  }
+  return clone;
+};
+
+export function serialize(components : ComponentStorage) : any[]
+{
+  let result : any[] = [];
+  for (let [id, component] of components.entries())
+  {
+    result.push([id, component !== null ? component.serialize() : null]);
+  }
+  return result;
+};
+
+export function deserialize(data : any[], deserializer : (data : any[]) => any) : ComponentStorage
+{
+  return new Map<number, any>( data.map((item) : [number, any[]] => [ (<any[]>item)[0] as number, (<any[]>item)[1] !== null ? deserializer( (<any[]>item)[1] as any[] ) : null]) );
+};
+
+export class World
+{
+  constructor(types : string[])
+  {
+    const makeComponentStorage = (type : string) : [string, ComponentStorage] => [ type, new Map<number, any>() ];
+    this.componentData = new Map<string, ComponentStorage>(types.map(makeComponentStorage));
   }
 
-  addEntity(e : Entity) : void
+  static nextEntityId() : number
   {
-    this.entities[e.id] = e;
+    return World.EntityId++;
+  }
+
+  addEntity(id : number, components : { [type : string] : any }) : void
+  {
+    Object.keys(components).forEach(type => this.componentData.get(type).set(id, components[type]));
+  }
+
+  removeEntity(id : number) : void
+  {
+    for (let data of this.componentData.values())
+      data.delete(id);
   }
 
   containsEntity(id : number) : boolean
   {
-    return id !== null && id in this.entities;
-  }
-
-  getEntity(id : number) : Entity
-  {
-    return this.entities[id];
-  }
-
-  removeEntity(e : Entity) : void
-  {
-    delete this.entities[e.id];
-  }
-
-  forEachEntity(componentNames : string[], callback : (e : Entity, components : any[]) => void) : void
-  {
-    for (let id in this.entities)
+    for (let data of this.componentData.values())
     {
-      const e = this.entities[id];
-      let components : any[] = e.getComponents(componentNames);
+      if (data.has(id))
+        return true;
+    }
+
+    return false;
+  }
+
+  addComponent(id : number, type : string, component : any) : void
+  {
+    this.componentData.get(type).set(id, component);
+  }
+
+  removeComponent(id : number, type : string) : void
+  {
+    this.componentData.get(type).delete(id);
+  }
+
+  getComponent(id : number, type : string) : any
+  {
+    let data = this.componentData.get(type);
+    let component = data ? data.get(id) : null;
+    return component ? component : null;
+  }
+
+  forEachEntity(types : string[], callback : (id : number, components : any[]) => void) : void
+  {
+    for (let id of this.findSmallestComponentFromTypes(types).keys())
+    {
+      let components = this.getComponents(id, types);
       if (components)
-        callback(e, components);
+        callback(id, components);
     }
   }
 
-  findEntity(componentNames : string[], callback : (e : Entity, components : any[]) => boolean) : Entity
+  getComponents(id : number, types : string[]) : any[]
   {
-    for (let id in this.entities)
+    let components : any[] = [];
+    for (let type of types)
     {
-      const e = this.entities[id];
-      let components : any[] = e.getComponents(componentNames);
-      if (components)
+      let component = this.componentData.get(type).get(id);
+      if (!component)
+        return null;
+
+      components.push(component);
+    }
+    return components;
+  };
+
+  getOptionalComponents(id : number, types : string[]) : any[]
+  {
+    return types.map(type => this.getComponent(id, type));
+  }
+
+  getSnapshot(types : string[]) : Map<string, ComponentStorage>
+  {
+    const typeToKvPair = (type : string) : [string, ComponentStorage] => [ type, clone(this.componentData.get(type)) ];
+    return new Map<string, ComponentStorage>(types.map(typeToKvPair));
+  }
+
+  replaceSnapshot(snapshot : Map<string, ComponentStorage>) : void
+  {
+    for (let [key, value] of snapshot.entries())
+    {
+      this.componentData.set(key, clone(value));
+    }
+  }
+
+  private findSmallestComponentFromTypes(types : string[]) : ComponentStorage
+  {
+    let minSize : number = Number.POSITIVE_INFINITY;
+    let minElement : ComponentStorage = null;
+    for (let type of types)
+    {
+      let data = this.componentData.get(type);
+      if (data && data.size < minSize)
       {
-        if (callback(e, components))
-          return e;
+        minSize = data.size;
+        minElement = data;
       }
     }
-    return null;
+    if (minElement === null)
+      console.log(types);
+    return minElement;
   }
 
-  filterEntities(componentNames : string[], callback : (e : Entity, components : any[]) => boolean) : Entity[]
-  {
-    let entities : Entity[] = [];
-    for (let id in this.entities)
-    {
-      const e = this.entities[id];
-      let components : any[] = e.getComponents(componentNames);
-      if (components)
-      {
-        if (callback(e, components))
-          entities.push(e);
-      }
-    }
-    return entities;
-  }
-
-  entities : EntityCollection = {};
-  private static EntityCount = 0;
+  private componentData : Map<string, ComponentStorage>;
+  private static EntityId : number = 0;
 };

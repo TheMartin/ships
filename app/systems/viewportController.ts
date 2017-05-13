@@ -1,8 +1,9 @@
-import { EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
+import { UserInputQueue } from "../ui/userInputQueue";
 
 import { Vec2, lerp } from "../vec2/vec2";
 
@@ -34,7 +35,7 @@ export class ViewportController implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
+  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     const mousePos = this.ui.mousePosition();
     if (!mousePos)

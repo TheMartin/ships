@@ -1,4 +1,4 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
@@ -7,15 +7,15 @@ import { Vec2 } from "../vec2/vec2";
 
 export class MoveKinematic implements System
 {
-  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
+  update(dt : number, world : World, deferred : Deferred) : void
   {
-    entities.forEachEntity([Position.t, Velocity.t], (e : Entity, components : any[]) =>
+    world.forEachEntity([Position.t, Velocity.t], (id : number, components : any[]) =>
     {
       let [position, velocity] = components as [Position, Velocity];
       position.pos.add(velocity.vel.clone().multiply(dt));
     });
 
-    entities.forEachEntity([Rotation.t, AngularVelocity.t], (e : Entity, components : any[]) =>
+    world.forEachEntity([Rotation.t, AngularVelocity.t], (id : number, components : any[]) =>
     {
       let [rotation, velocity] = components as [Rotation, AngularVelocity];
       rotation.angle += velocity.vel * dt;

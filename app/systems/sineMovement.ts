@@ -1,4 +1,4 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
@@ -9,9 +9,9 @@ export class SineMovement implements System
   {
   }
 
-  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
+  update(dt : number, world : World, deferred : Deferred) : void
   {
-    entities.forEachEntity([Position.t], (e : Entity, components : any[]) =>
+    world.forEachEntity([Position.t], (id : number, components : any[]) =>
     {
       let [position] = components as [Position];
       let pos = position.pos;
@@ -22,7 +22,7 @@ export class SineMovement implements System
         pos.x -= (this.xMax - this.xMin);
       }
 
-      let rotation = e.components[Rotation.t] as Rotation;
+      let rotation = world.getComponent(id, Rotation.t) as Rotation;
       if (rotation)
       {
         rotation.angle += this.rotationSpeed * dt;

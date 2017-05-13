@@ -1,4 +1,4 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
@@ -11,48 +11,43 @@ import { interceptVector } from "../util/intercept";
 
 export class Projectile
 {
-  constructor(target : Entity, range : number, public speed : number, public damage : number)
+  constructor(public target : number, range : number, public speed : number, public damage : number)
   {
-    if (target.components[Targetable.t])
-      this.target = target.id;
-
     this.lifetime = range / speed;
   }
-  public target : number = null;
   public lifetime : number = 0;
   static readonly t : string = "Projectile";
 };
 
 export class MoveProjectiles implements System
 {
-  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
+  update(dt : number, world : World, deferred : Deferred) : void
   {
-    entities.forEachEntity([Position.t, Rotation.t, Velocity.t, Projectile.t], (e : Entity, components : any[]) =>
+    world.forEachEntity([Position.t, Rotation.t, Velocity.t, Projectile.t], (id : number, components : any[]) =>
     {
       let [position, rotation, velocity, projectile] = components as [Position, Rotation, Velocity, Projectile];
       if (projectile.lifetime < 0)
       {
-        deferred.push((entities : EntityContainer) => { entities.removeEntity(e); });
+        deferred.push((world : World) => { world.removeEntity(id); });
         return;
       }
 
       projectile.lifetime -= dt;
 
-      let targetEntity = entities.getEntity(projectile.target);
-      if (!targetEntity)
+      if (!world.containsEntity(projectile.target))
       {
         projectile.target = null;
         return;
       }
 
-      let [targetPos, targetVel] = targetEntity.getComponents([Position.t, Velocity.t]) as [Position, Velocity];
-      let [damageable] = targetEntity.getOptionalComponents([Damageable.t]) as [Damageable];
+      let [targetPos, targetVel] = world.getComponents(projectile.target, [Position.t, Velocity.t]) as [Position, Velocity];
+      let [damageable] = world.getOptionalComponents(projectile.target, [Damageable.t]) as [Damageable];
       if (distance(targetPos.pos, position.pos) < 5)
       {
         if (damageable)
           damageable.hitpoints -= projectile.damage;
 
-        deferred.push((entities : EntityContainer) => { entities.removeEntity(e); });
+        deferred.push((world : World) => { world.removeEntity(id); });
         return;
       }
 

@@ -1,4 +1,4 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
@@ -13,51 +13,60 @@ import { Vec2, distance } from "../vec2/vec2";
 
 export class AttackOrder implements UserEvent
 {
-  constructor(public entity : number) {}
-  name : string = "AttackOrder";
+  constructor(public entity : number, public target : number) { }
+  name : string = AttackOrder.t;
+  static readonly t : string = "AttackOrder";
 };
 
 export class OrderAttack implements RenderSystem
 {
-  constructor(inputQueue : UserInputQueue, player : Player, ui : UiManager, viewport : Viewport)
+  constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager, viewport : Viewport)
   {
-    inputQueue.setHandler("AttackOrder", (evt : AttackOrder, interp : number, entities : EntityContainer) =>
+    inputQueue.setHandler(AttackOrder.t, (evt : AttackOrder, interp : number, world : World) =>
     {
-      if (!entities.containsEntity(evt.entity))
+      if (!world.containsEntity(evt.entity) || !world.containsEntity(evt.target))
         return;
 
-      let entity = entities.getEntity(evt.entity);
-
-      entities.forEachEntity([Selected.t, AttackTarget.t, Controlled.t], (e : Entity, components : any[]) =>
-      {
-        let [, attackTarget, controlled] = components as [Selected, AttackTarget, Controlled];
-        if (controlled.player.id === player.id)
-          attackTarget.setTarget(entity);
-      });
+      let attackTarget = world.getComponent(evt.entity, AttackTarget.t) as AttackTarget;
+      if (attackTarget)
+        attackTarget.target = evt.target;
     });
 
     ui.addEventListener("entityclick", (event : Events.EntityClick) =>
     {
       if (event.button === MouseButton.Right)
-      {
-        for (let entity of event.entities)
-        {
-          let components = entity.getComponents([Controlled.t, Targetable.t]);
-          if (!components)
-            continue;
-
-          let [controlled, targetable] = components as [Controlled, Targetable];
-          if (controlled.player.id !== player.id)
-          {
-            inputQueue.enqueue(new AttackOrder(entity.id));
-            break;
-          }
-        }
-      }
+        this.orderQueue.push(event.entities);
     });
   }
 
-  update(dt : number, interp : number, entities : EntityContainer, deferred : Deferred) : void
+  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
+    for (let order of this.orderQueue)
+    {
+      for (let entity of order)
+      {
+        if (!world.containsEntity(entity))
+          continue;
+
+        let components = world.getComponents(entity, [Controlled.t, Targetable.t]) as [Controlled, Targetable];
+        if (!components)
+          continue;
+
+        let [controlled, ] = components;
+        if (controlled.player.id !== this.player.id)
+        {
+          world.forEachEntity([Selected.t, AttackTarget.t, Controlled.t], (id : number, components : any[]) =>
+          {
+            let [, , controlled] = components as [Selected, AttackTarget, Controlled];
+            if (controlled.player.id === this.player.id)
+              inputQueue.enqueue(new AttackOrder(id, entity));
+          });
+          break;
+        }
+      }
+    }
+    this.orderQueue = [];
   }
+
+  private orderQueue : number[][] = [];
 };

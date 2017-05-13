@@ -1,27 +1,57 @@
-import { Entity, EntityContainer } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
+import { NetworkComponent } from "../network/networkComponent";
 
-export class Damageable
+export class Damageable implements NetworkComponent
 {
   constructor(public maxHitpoints : number)
   {
     this.hitpoints = maxHitpoints;
   }
+
+  equal(other : Damageable) : boolean
+  {
+    return this.hitpoints === other.hitpoints && this.maxHitpoints === other.maxHitpoints;
+  }
+
+  clone() : Damageable
+  {
+    return Damageable.Make(this.maxHitpoints, this.hitpoints);
+  }
+
+  serialize() : any[]
+  {
+    return [ this.maxHitpoints, this.hitpoints ];
+  }
+
+  static deserialize(data : any[]) : Damageable
+  {
+    return Damageable.Make(data[0], data[1]);
+  }
+
+  private static Make(maxHitpoints : number, hitpoints : number)
+  {
+    let dmg = new Damageable(maxHitpoints);
+    dmg.hitpoints = hitpoints;
+    return dmg;
+  }
+
   hitpoints : number;
+
   static readonly t : string = "Damageable";
 };
 
 export class CheckDestroyed implements System
 {
-  update(dt : number, entities : EntityContainer, deferred : Deferred) : void
+  update(dt : number, world : World, deferred : Deferred) : void
   {
-    entities.forEachEntity([Damageable.t], (e : Entity, components : any[]) =>
+    world.forEachEntity([Damageable.t], (id : number, components : any[]) =>
     {
       let [damageable] = components as [Damageable];
       if (damageable.hitpoints < 0)
       {
-        deferred.push(() => { entities.removeEntity(e); });
+        deferred.push(() => { world.removeEntity(id); });
       }
     });
   }
