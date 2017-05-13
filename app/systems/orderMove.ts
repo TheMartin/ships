@@ -3,16 +3,28 @@ import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
-import { UserEvent, UserInputQueue } from "../ui/userInputQueue";
+import { UserInputQueue } from "../ui/userInputQueue";
+import { NetworkUserEvent } from "../network/networkUserEvent";
 import { MoveToTarget } from "../systems/moveTo";
 import { Selected } from "../systems/selection";
 import { Controlled, Player } from "../systems/playable";
 
 import { Vec2 } from "../vec2/vec2";
 
-export class MoveOrder implements UserEvent
+export class MoveOrder implements NetworkUserEvent
 {
   constructor(public entity : number, public target : Vec2) {}
+
+  serialize() : any[]
+  {
+    return [ this.entity, this.target.x, this.target.y ];
+  }
+
+  static deserialize(data : any[]) : MoveOrder
+  {
+    return new MoveOrder(data[0], new Vec2(data[1], data[2]));
+  }
+
   name : string = MoveOrder.t;
   static readonly t : string = "MoveOrder";
 };

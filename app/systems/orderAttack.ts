@@ -3,7 +3,8 @@ import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, MouseButton, Events } from "../ui/uiManager";
-import { UserInputQueue, UserEvent } from "../ui/userInputQueue";
+import { UserInputQueue } from "../ui/userInputQueue";
+import { NetworkUserEvent } from "../network/networkUserEvent";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
@@ -11,9 +12,20 @@ import { Controlled, Player } from "../systems/playable";
 
 import { Vec2, distance } from "../vec2/vec2";
 
-export class AttackOrder implements UserEvent
+export class AttackOrder implements NetworkUserEvent
 {
   constructor(public entity : number, public target : number) { }
+
+  serialize() : any[]
+  {
+    return [ this.entity, this.target ];
+  }
+
+  static deserialize(data : any[]) : AttackOrder
+  {
+    return new AttackOrder(data[0], data[1]);
+  }
+
   name : string = AttackOrder.t;
   static readonly t : string = "AttackOrder";
 };

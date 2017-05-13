@@ -37,6 +37,7 @@ import { Projectile } from "../systems/projectile";
 
 import { UiManager } from "../ui/uiManager";
 import { UserInputQueue, UserEvent } from "../ui/userInputQueue";
+import { NetworkUserEvent } from "../network/networkUserEvent";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
 
@@ -52,41 +53,6 @@ enum MessageType
   ServerUpdateAck,
   ClientUpdate,
   ClientUpdateAck
-};
-
-class NetworkEventFn
-{
-  private static table : {
-    [type : string] : {
-      serialize : (e : UserEvent) => any[];
-      deserialize : (data : any[]) => UserEvent;
-    }
-  } = {
-    [MoveOrder.t] : {
-      serialize : (e : MoveOrder) => [ e.entity, e.target.x, e.target.y ],
-      deserialize : data => new MoveOrder(data[0], new Vec2(data[1], data[2]))
-    },
-    [AttackOrder.t] : {
-      serialize : (e : AttackOrder) => [ e.entity, e.target ],
-      deserialize : data => new AttackOrder(data[0], data[1])
-    }
-  };
-
-  static isNetworkedEvent(type : string) : boolean
-  {
-    return type in NetworkEventFn.table;
-  }
-
-  static serialize(e : UserEvent) : any[]
-  {
-    return NetworkEventFn.isNetworkedEvent(e.name) ? [e.name].concat(NetworkEventFn.table[e.name].serialize(e)) : null;
-  }
-
-  static deserialize(data : any[]) : UserEvent
-  {
-    let [type, ...content] = data;
-    return NetworkEventFn.isNetworkedEvent(type) ? NetworkEventFn.table[type].deserialize(content) : null;
-  }
 };
 
 export class Game
@@ -142,6 +108,14 @@ export class Game
       [AttackTarget.t, AttackTarget.deserialize],
       [Damageable.t, Damageable.deserialize],
       [TracerEffect.t, TracerEffect.deserialize]
+    ]);
+    this.networkEventTypes = [
+      AttackOrder.t,
+      MoveOrder.t
+    ];
+    this.networkEventDeserializers = new Map<string, (data : any[]) => NetworkUserEvent>([
+      [AttackOrder.t, AttackOrder.deserialize],
+      [MoveOrder.t, MoveOrder.deserialize]
     ]);
     this.world = new World(this.componentTypes);
   }
@@ -218,7 +192,10 @@ export class Game
       setTimeout(sendUpdatesFn, 1000 / netTickRate);
       const snapshot = this.world.getSnapshot(this.networkComponentTypes);
       const oldSnapshot = snapshotHistory.length > 0 ? snapshotHistory[0].snapshot : dummySnapshot;
-      const clientDelta = this.networkComponentTypes.map((key : string) : [string, ComponentStorage] => { return [key, delta(oldSnapshot.get(key), snapshot.get(key))]; });
+      const clientDelta = this.networkComponentTypes.map((key : string) : [string, ComponentStorage] =>
+      {
+        return [key, delta(oldSnapshot.get(key), snapshot.get(key))];
+      });
       const ack = serverAckCounter++;
       server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.map(([key, value] : [string, ComponentStorage]) => { return [key, serialize(value)]; }) });
       snapshotHistory.push({ ack , snapshot });
@@ -233,7 +210,7 @@ export class Game
           for (let item of history)
           {
             if (item.ack > clientAckCounter)
-              item.events.forEach((e : any[]) => this.inputQueue.enqueue(NetworkEventFn.deserialize(e)));
+              item.events.forEach(([name, ...data] : [string, any[]]) => this.inputQueue.enqueue(this.networkEventDeserializers.get(name)(data)));
           }
           clientAckCounter = ack;
         }
@@ -263,23 +240,23 @@ export class Game
   {
     this.setUpClientSystems();
 
+    let snapshot = this.makeEmptyNetworkSnapshot();
+    let inputHistory : { ack : number, events : NetworkUserEvent[] }[] = [];
     let serverAckCounter = -1;
     let clientAckCounter = 0;
 
-    let unsentEvents : UserEvent[] = [];
-    let inputHistory : { ack : number, events : UserEvent[] }[] = [];
+    let unsentEvents : NetworkUserEvent[] = [];
     let handlers : { [type : string] : (e : UserEvent, interp : number, world : World) => void } = {};
-    [MoveOrder.t, AttackOrder.t].forEach(type =>
+    this.networkEventTypes.forEach(type =>
     {
       let handler = this.inputQueue.getHandler(type);
       handlers[type] = handler;
       this.inputQueue.setHandler(type, (e : UserEvent, interp : number, world : World) =>
       {
         handler(e, interp, world);
-        unsentEvents.push(e);
+        unsentEvents.push(e as NetworkUserEvent);
       });
     });
-    let snapshot = this.makeEmptyNetworkSnapshot();
 
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -303,9 +280,9 @@ export class Game
         const ack = clientAckCounter++;
         inputHistory.push({ ack, events : unsentEvents });
         unsentEvents = [];
-        let history = inputHistory.map((item : {ack : number, events : UserEvent[]}) : {ack : number, events : any[]} =>
+        let history = inputHistory.map((item : {ack : number, events : NetworkUserEvent[]}) : {ack : number, events : any[]} =>
         {
-          return { ack : item.ack, events : item.events.map(e => NetworkEventFn.serialize(e)) };
+          return { ack : item.ack, events : item.events.map(e => [e.name, ...e.serialize()]) };
         });
         client.send({ type : MessageType.ClientUpdate, ack, history });
       }
@@ -319,12 +296,14 @@ export class Game
         {
           this.lastUpdate = performance.now();
           this.spatialCache.update(this.world);
-          delta.forEach(([key, data] : [string, any[]]) : void => { applyDelta(snapshot.get(key), deserialize(data, this.networkComponentDeserializers.get(key))); });
+          delta.forEach(([key, data] : [string, any[]]) : void =>
+          {
+            applyDelta(snapshot.get(key), deserialize(data, this.networkComponentDeserializers.get(key)));
+          });
           this.world.replaceSnapshot(snapshot);
           inputHistory.map(item => item.events)
-            .reduce((lhs, rhs) => lhs.concat(rhs), [])
+            .reduceRight((rhs, lhs) => lhs.concat(rhs), unsentEvents)
             .forEach(e => handlers[e.name](e, 0, this.world));
-          unsentEvents.forEach(e => handlers[e.name](e, 0, this.world));
           serverAckCounter = ack;
         }
         client.send({ type : MessageType.ServerUpdateAck, ack });
@@ -479,6 +458,8 @@ export class Game
   private componentTypes : string[] = [];
   private networkComponentTypes : string[] = [];
   private networkComponentDeserializers : Map<string, (data : any[]) => any> = null;
+  private networkEventTypes : string[] = [];
+  private networkEventDeserializers : Map<string, (data : any[]) => any> = null;
   private world : World = null;
   private spatialCache : SpatialCache = new SpatialCache();
   private updateSystems : System[] = [];
