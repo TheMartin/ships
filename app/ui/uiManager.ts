@@ -55,6 +55,11 @@ export namespace Events
     pos : Vec2;
     delta : number;
   };
+
+  export class KeyEvent
+  {
+    key : string;
+  };
 }
 
 class Clickable
@@ -132,6 +137,11 @@ export class UiManager
           this.mouseButtons[i] = ButtonState.Dragged;
         }
       }
+    });
+
+    window.addEventListener("keydown", (e : KeyboardEvent) =>
+    {
+      this.invokeListeners("keydown", { key : e.key });
     });
   }
 
@@ -215,6 +225,7 @@ export class UiManager
     mousemove : [],
     dragstart : [],
     dragend : [],
-    wheel : []
+    wheel : [],
+    keydown : []
   };
 };

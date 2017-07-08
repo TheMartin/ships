@@ -123,6 +123,18 @@ export class World
     }
   }
 
+  findEntities(types : string[], filter : (id : number, components : any[]) => boolean = () => true) : number[]
+  {
+    let entities : number[] = [];
+    for (let id of this.findSmallestComponentFromTypes(types).keys())
+    {
+      let components = this.getComponents(id, types);
+      if (components && filter(id, components))
+        entities.push(id);
+    }
+    return entities;
+  }
+
   getComponents(id : number, types : string[]) : any[]
   {
     let components : any[] = [];

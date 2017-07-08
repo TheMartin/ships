@@ -1,7 +1,7 @@
 import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
-import { MoveToTarget } from "../systems/moveTo";
+import { MoveToTarget, MoveTo } from "../systems/moveTo";
 import { Controlled, Player } from "../systems/playable";
 import { Vec2 } from "../vec2/vec2";
 
@@ -17,8 +17,11 @@ export class ChooseRandomMoveTarget implements System
     world.forEachEntity([MoveToTarget.t, Controlled.t], (id : number, components : any[]) =>
     {
       let [target, controlled] = components as [MoveToTarget, Controlled];
-      if (controlled.player.id === this.player.id && !target.target)
-        target.target = this.min.clone().add(new Vec2(Math.random(), Math.random()).elementMultiply(this.size));
+      if (controlled.player.id === this.player.id && target.order.kind === "Stop")
+      {
+        let newTarget = this.min.clone().add(new Vec2(Math.random(), Math.random()).elementMultiply(this.size));
+        target.order = new MoveTo(newTarget);
+      }
     });
   }
 

@@ -9,6 +9,7 @@ import { SpatialCache } from "../systems/spatialCache";
 import { Velocity } from "../systems/kinematic";
 import { MoveToTarget } from "../systems/moveTo";
 import { Named } from "../systems/named";
+import { Squadron, SquadronMember } from "../systems/squadron";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
 import { Damageable } from "../systems/damageable";
 
@@ -46,6 +47,61 @@ function entityName(world : World, id : number) : string
   return name ? name.name : null;
 };
 
+function renderShip(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
+{
+  let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = world.getOptionalComponents(id,
+    [Named.t, Position.t, Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
+    ) as [Named, Position, Rotation, Velocity, MoveToTarget, AttackTarget, Damageable];
+
+  return VdomElement.create("div", { "class" : "ship" },
+
+    name
+      ? VdomElement.create("span", {"class" : "name"}, name.name)
+      : null,
+
+    damageable
+      ? VdomElement.create("span", {"class" : "hp"}, damageable.hitpoints.toFixed() + "/" + damageable.maxHitpoints.toFixed())
+      : null,
+
+    position || rotation || velocity
+      ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, rotation, spatialCache, id, interp, velocity))
+      : null,
+
+    moveTarget && moveTarget.order.kind === "MoveTo"
+      ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.order.target))
+      : null,
+
+    attackTarget && attackTarget.target
+      ? VdomElement.create("span", {"class" : "atk"}, entityName(world, attackTarget.target))
+      : null
+  );
+};
+
+function renderSquadron(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
+{
+  let [name, squadron, moveTarget] = world.getOptionalComponents(id, [Named.t, Squadron.t, MoveToTarget.t]) as [Named, Squadron, MoveToTarget];
+  const squadronId = id;
+  const flagship = squadron.flagship;
+  const squadronMembers = world.findEntities([SquadronMember.t], (id : number, components : any[]) =>
+  {
+    let [member] = components as [SquadronMember];
+    return member.squadron === squadronId;
+  });
+
+  return VdomElement.create("div", { "class" : "squadron" },
+
+    name
+      ? VdomElement.create("span", {"class" : "name"}, name.name)
+      : null,
+
+    moveTarget && moveTarget.order.kind === "MoveTo"
+      ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.order.target))
+      : null,
+
+    VdomElement.create("div", {"class" : "members"}, ...squadronMembers.map(id => renderShip(id, world, spatialCache, interp)) )
+  );
+};
+
 export class StatusWindow implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private ui : UiManager)
@@ -59,33 +115,10 @@ export class StatusWindow implements RenderSystem
     let elem = VdomElement.create("div", {"class" : "window"});
     world.forEachEntity([Selected.t], (id : number, components : any[]) =>
     {
-      let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = world.getOptionalComponents(id,
-        [Named.t, Position.t, Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
-        ) as [Named, Position, Rotation, Velocity, MoveToTarget, AttackTarget, Damageable];
-
       elem.children.push(
-        VdomElement.create("div", { "class" : "ship" },
-
-          name
-            ? VdomElement.create("span", {"class" : "name"}, name.name)
-            : null,
-
-          damageable
-            ? VdomElement.create("span", {"class" : "hp"}, damageable.hitpoints.toFixed() + "/" + damageable.maxHitpoints.toFixed())
-            : null,
-
-          position || rotation || velocity
-            ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, rotation, this.spatialCache, id, interp, velocity))
-            : null,
-
-          moveTarget && moveTarget.target
-            ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.target))
-            : null,
-
-          attackTarget && attackTarget.target
-            ? VdomElement.create("span", {"class" : "atk"}, entityName(world, attackTarget.target))
-            : null
-        )
+        world.getComponent(id, Squadron.t)
+        ? renderSquadron(id, world, this.spatialCache, interp)
+        : renderShip(id, world, this.spatialCache, interp)
       );
     });
 

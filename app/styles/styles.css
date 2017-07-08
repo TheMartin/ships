@@ -90,6 +90,10 @@ textarea, .menu label {
   width: 100%;
 }
 
+.members {
+  padding-left: 15px;
+}
+
 .name, .pos, .tgt, .atk, .hp {
   padding: 5px;
 }
@@ -97,6 +101,10 @@ textarea, .menu label {
 .name {
   color: #aaffaa;
   font-size: 130%;
+}
+
+.squadron > .name {
+  font-weight: bold;
 }
 
 .pos, .tgt, .hp {

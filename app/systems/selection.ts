@@ -16,24 +16,26 @@ import { Vec2, lerp } from "../vec2/vec2";
 
 export class Selectable implements NetworkComponent
 {
+  constructor(public target : number) {}
+
   equal(other : Selectable) : boolean
   {
-    return true;
+    return this.target === other.target;
   }
 
   clone() : Selectable
   {
-    return new Selectable();
+    return new Selectable(this.target);
   }
 
   serialize() : any[]
   {
-    return [];
+    return [ this.target ];
   }
 
   static deserialize(data : any[]) : Selectable
   {
-    return new Selectable();
+    return new Selectable(data[0]);
   }
 
   static readonly t : string = "Selectable";
@@ -81,56 +83,48 @@ export class Unselect implements UserEvent
   name : string = "Unselect";
 };
 
+function unselectAll(world : World)
+{
+  world.forEachEntity([Selected.t], (id : number, components : any[]) => { world.removeComponent(id, Selected.t); });
+}
+
 export class SelectionSystem implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private spatialCache : SpatialCache, player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
     inputQueue.setHandler("SelectSingle", (evt : SelectSingle, interp : number, world : World) =>
     {
-      world.forEachEntity([Selectable.t, Controlled.t], (id : number, components : any[]) =>
+      unselectAll(world);
+
+      let components = world.getComponents(evt.entity, [Selectable.t, Controlled.t]);
+      if (!components)
+        return;
+
+      let [selectable, controlled] = components as [Selectable, Controlled];
+      if (controlled.player.id === player.id)
       {
-        let [selectable, controlled] = components as [Selectable, Controlled];
-        if (controlled.player.id !== player.id)
-          return;
-
-        let selected = world.getComponent(id, Selected.t) as Selected;
-
-        if (!selected && id === evt.entity)
-        {
-          world.addComponent(id, Selected.t, new Selected());
-        }
-        else if (selected && id !== evt.entity)
-        {
-          world.removeComponent(id, Selected.t);
-        }
-      });
+        world.addComponent(selectable.target, Selected.t, new Selected());
+      }
     });
 
     inputQueue.setHandler("Unselect", (evt : Unselect, interp : number, world : World) =>
     {
-      world.forEachEntity([Selected.t], (id : number, components : any[]) =>
-      {
-        world.removeComponent(id, Selected.t);
-      });
+      unselectAll(world);
     });
 
     inputQueue.setHandler("SelectBox", (evt : SelectBox, interp : number, world : World) =>
     {
+      unselectAll(world);
+
       world.forEachEntity([Position.t, Selectable.t, Controlled.t], (id : number, components : any[]) =>
       {
-        let [position, , controlled] = components as [Position, Selectable, Controlled];
+        let [position, selectable, controlled] = components as [Position, Selectable, Controlled];
         if (controlled.player.id !== player.id)
           return;
 
-        let selected = world.getComponent(id, Selected.t) as Selected;
-        const within = isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, id, interp)), evt.box);
-        if (!selected && within)
+        if (isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, id, interp)), evt.box))
         {
-          world.addComponent(id, Selected.t, new Selected());
-        }
-        else if (selected && !within)
-        {
-          world.removeComponent(id, Selected.t);
+          world.addComponent(selectable.target, Selected.t, new Selected());
         }
       });
     });

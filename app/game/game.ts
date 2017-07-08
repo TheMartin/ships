@@ -5,7 +5,8 @@ import { RenderSystem } from "../ecs/renderSystem";
 
 import { SpatialCache } from "../systems/spatialCache";
 import { MoveKinematic } from "../systems/moveKinematic";
-import { MoveTo } from "../systems/moveTo";
+import { UpdateMovement, FinishMovement } from "../systems/moveTo";
+import { Squadron, SquadronMember, SquadronMovement, CheckSquadronIntegrity } from "../systems/squadron";
 import { ChooseRandomMoveTarget } from "../systems/randomMoveTarget";
 import { RenderMoveTarget } from "../systems/renderMoveTarget";
 import { OrderMove, MoveOrder } from "../systems/orderMove";
@@ -16,6 +17,7 @@ import { ViewportController } from "../systems/viewportController";
 import { Player, PlayerType } from "../systems/playable";
 import { RenderAttackTarget } from "../systems/renderAttackTarget";
 import { OrderAttack, AttackOrder } from "../systems/orderAttack";
+import { JoinOrder, FormSquadronOrder, OrderJoin } from "../systems/orderJoin";
 import { Shooting } from "../systems/armed";
 import { MoveProjectiles } from "../systems/projectile";
 import { CheckDestroyed } from "../systems/damageable";
@@ -77,7 +79,9 @@ export class Game
       Armed.t,
       Damageable.t,
       TracerEffect.t,
-      Projectile.t
+      Projectile.t,
+      Squadron.t,
+      SquadronMember.t
     ];
     this.networkComponentTypes = [
       Position.t,
@@ -111,11 +115,15 @@ export class Game
     ]);
     this.networkEventTypes = [
       AttackOrder.t,
-      MoveOrder.t
+      MoveOrder.t,
+      JoinOrder.t,
+      FormSquadronOrder.t
     ];
     this.networkEventDeserializers = new Map<string, (data : any[]) => NetworkUserEvent>([
       [AttackOrder.t, AttackOrder.deserialize],
-      [MoveOrder.t, MoveOrder.deserialize]
+      [MoveOrder.t, MoveOrder.deserialize],
+      [JoinOrder.t, JoinOrder.deserialize],
+      [FormSquadronOrder.t, FormSquadronOrder.deserialize]
     ]);
     this.world = new World(this.componentTypes);
   }
@@ -359,11 +367,13 @@ export class Game
       );
     for (let i = 0; i < 5; ++i)
     {
-      this.world.addEntity( World.nextEntityId(), Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.Ship, this.players[0]) );
+      const id = World.nextEntityId();
+      this.world.addEntity( id, Static.makeShip(id, Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.Ship, this.players[0]) );
     }
     for (let i = 5; i < 10; ++i)
     {
-      this.world.addEntity( World.nextEntityId(), Static.makeShip(Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.NeutralShip, this.players[1]) );
+      const id = World.nextEntityId();
+      this.world.addEntity( id, Static.makeShip(id, Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.NeutralShip, this.players[1]) );
     }
   }
 
@@ -375,11 +385,14 @@ export class Game
     this.updateSystems =
     [
       new ChooseRandomMoveTarget(ai, new Vec2(0, 0), new Vec2(1000, 1000)),
-      new MoveTo(50, Math.PI / 3),
+      new UpdateMovement(50, Math.PI / 3),
+      new SquadronMovement(50, Math.PI / 3),
       new MoveProjectiles(),
       new Shooting(),
       new MoveKinematic(),
-      new CheckDestroyed()
+      new CheckDestroyed(),
+      new CheckSquadronIntegrity(),
+      new FinishMovement()
     ];
 
     this.renderSystems =
@@ -387,6 +400,7 @@ export class Game
       new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
+      new OrderJoin(this.inputQueue, player, this.ui, this.viewport),
       new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
@@ -404,11 +418,12 @@ export class Game
 
     this.updateSystems =
     [
-      new MoveTo(50, Math.PI / 3),
+      new UpdateMovement(50, Math.PI / 3),
       new MoveProjectiles(),
       new Shooting(),
       new MoveKinematic(),
-      new CheckDestroyed()
+      new CheckDestroyed(),
+      new FinishMovement()
     ];
 
     this.renderSystems =

@@ -5,8 +5,8 @@ import { Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { NetworkUserEvent } from "../network/networkUserEvent";
-import { MoveToTarget } from "../systems/moveTo";
-import { Selected } from "../systems/selection";
+import { MoveToTarget, MoveTo } from "../systems/moveTo";
+import { Selected, Selectable } from "../systems/selection";
 import { Controlled, Player } from "../systems/playable";
 
 import { Vec2 } from "../vec2/vec2";
@@ -40,7 +40,7 @@ export class OrderMove implements RenderSystem
 
       let moveTarget = world.getComponent(evt.entity, MoveToTarget.t) as MoveToTarget;
       if (moveTarget)
-        moveTarget.target = evt.target;
+        moveTarget.order = new MoveTo(evt.target);
     });
 
     ui.addEventListener("click", (event : Events.MouseClick) =>

@@ -6,6 +6,7 @@ import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { MoveToTarget } from "../systems/moveTo";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
+import { Squadron } from "../systems/squadron";
 import { SpatialCache } from "../systems/spatialCache";
 import { Vec2 } from "../vec2/vec2";
 
@@ -18,15 +19,37 @@ export class RenderMoveTarget implements RenderSystem
     world.forEachEntity([Selected.t, MoveToTarget.t], (id : number, components : any[]) =>
     {
       let [, moveTarget] = components as [Selected, MoveToTarget];
-      if (!moveTarget.target)
+      if (moveTarget.order.kind !== "MoveTo")
         return;
 
-      this.renderer.drawCircle(moveTarget.target, 10, RenderMoveTarget.targetProps, this.viewport);
-      this.renderer.drawCircle(moveTarget.target, 5, RenderMoveTarget.targetProps, this.viewport);
+      let target = moveTarget.order.target;
+      this.renderer.drawCircle(target, 10, RenderMoveTarget.targetProps, this.viewport);
+      this.renderer.drawCircle(target, 5, RenderMoveTarget.targetProps, this.viewport);
 
+      let originPos : Vec2 = null;
       let position = world.getComponent(id, Position.t) as Position;
       if (position)
-        this.renderer.drawLine(this.spatialCache.interpolatePosition(position, id, interp), moveTarget.target, RenderMoveTarget.targetProps, this.viewport);
+      {
+        originPos = this.spatialCache.interpolatePosition(position, id, interp);
+      }
+      else
+      {
+        let squadron = world.getComponent(id, Squadron.t) as Squadron;
+        if (squadron)
+        {
+          let flagship = squadron.flagship;
+          let position = world.getComponent(squadron.flagship, Position.t) as Position;
+          if (position)
+          {
+            originPos = this.spatialCache.interpolatePosition(position, squadron.flagship, interp);
+          }
+        }
+      }
+
+      if (originPos)
+      {
+        this.renderer.drawLine(originPos, target, RenderMoveTarget.targetProps, this.viewport);
+      }
     });
   }
 

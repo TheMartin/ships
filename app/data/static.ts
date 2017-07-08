@@ -43,7 +43,7 @@ export class Static
     Static.shipVertices
   );
 
-  static makeShip(pos : Vec2, rot : number, name : string, shape : Shape, player : Player)
+  static makeShip(id : number, pos : Vec2, rot : number, name : string, shape : Shape, player : Player)
   {
     return {
       [Position.t] : new Position(pos),
@@ -52,7 +52,7 @@ export class Static
       [AngularVelocity.t] : new AngularVelocity(0),
       [RenderShape.t] : new RenderShape(shape),
       [MoveToTarget.t] : new MoveToTarget(),
-      [Selectable.t] : new Selectable(),
+      [Selectable.t] : new Selectable(id),
       [Named.t] : new Named(name),
       [Controlled.t] : new Controlled(player),
       [Targetable.t] : new Targetable(),
