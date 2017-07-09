@@ -29,31 +29,33 @@ export class AttackTarget implements NetworkComponent
 {
   equal(other : AttackTarget) : boolean
   {
-    return this.target === other.target;
+    return this.target === other.target && this.delegate === other.delegate;
   }
 
   clone() : AttackTarget
   {
-    return AttackTarget.Make(this.target);
+    return AttackTarget.Make(this.target, this.delegate);
   }
 
   serialize() : any[]
   {
-    return [ this.target ];
+    return [ this.target, this.delegate ];
   }
 
   static deserialize(data : any[]) : AttackTarget
   {
-    return AttackTarget.Make(data[0] as number);
+    return AttackTarget.Make(data[0] as number, data[1] as number);
   }
 
-  private static Make(target : number) : AttackTarget
+  private static Make(target : number, delegate : number) : AttackTarget
   {
     let tgt = new AttackTarget();
     tgt.target = target;
+    tgt.delegate = delegate;
     return tgt;
   }
 
   target : number = null;
+  delegate : number = null;
   static readonly t : string = "AttackTarget";
 };

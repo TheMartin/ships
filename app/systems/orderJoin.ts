@@ -6,6 +6,7 @@ import { UiManager, Events, MouseButton } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { NetworkUserEvent } from "../network/networkUserEvent";
 import { MoveToTarget, Join } from "../systems/moveTo";
+import { AttackTarget } from "../systems/attackTarget";
 import { Selected, Selectable } from "../systems/selection";
 import { Named } from "../systems/named";
 import { Squadron, SquadronMember } from "../systems/squadron";
@@ -65,6 +66,7 @@ export class OrderJoin implements RenderSystem
         [Squadron.t] : new Squadron(evt.entity),
         [Named.t] : new Named("Squadron"),
         [MoveToTarget.t] : new MoveToTarget(),
+        [AttackTarget.t] : new AttackTarget(),
         [Controlled.t] : new Controlled(controlled.player)
       });
       world.removeComponent(evt.entity, MoveToTarget.t);
@@ -75,6 +77,7 @@ export class OrderJoin implements RenderSystem
       }
       (world.getComponent(evt.entity, Selectable.t) as Selectable).target = squadronId;
       world.addComponent(evt.entity, SquadronMember.t, new SquadronMember(squadronId, null));
+      (world.getComponent(evt.entity, AttackTarget.t) as AttackTarget).delegate = squadronId;
     });
 
     inputQueue.setHandler(JoinOrder.t, (evt : JoinOrder, interp : number, world : World) =>

@@ -5,6 +5,7 @@ import { NetworkComponent } from "../network/networkComponent";
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { Squadron, SquadronMember } from "../systems/squadron";
+import { AttackTarget } from "../systems/attackTarget";
 import { Selectable, Selected } from "../systems/selection";
 import { Vec2, dot, norm, norm2 } from "../vec2/vec2";
 import { angleDiff } from "../util/angle";
@@ -181,8 +182,13 @@ export class FinishMovement implements System
             {
               let flagshipRot = world.getComponent(flagship, Rotation.t) as Rotation;
               world.removeComponent(id, MoveToTarget.t);
-              world.removeComponent(id, Selected.t);
+              if (world.getComponent(id, Selected.t))
+              {
+                world.removeComponent(id, Selected.t);
+                world.addComponent(squadron, Selected.t, new Selected());
+              }
               (world.getComponent(id, Selectable.t) as Selectable).target = squadron;
+              (world.getComponent(id, AttackTarget.t) as AttackTarget).delegate = squadron;
               world.addComponent(id, SquadronMember.t, new SquadronMember(squadron, toTarget.negate().rotated(flagshipRot.angle)));
             });
           }

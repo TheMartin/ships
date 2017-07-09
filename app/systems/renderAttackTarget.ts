@@ -6,6 +6,7 @@ import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
 import { Selected } from "../systems/selection";
 import { Position } from "../systems/spatial";
+import { Squadron } from "../systems/squadron";
 import { SpatialCache } from "../systems/spatialCache";
 import { Vec2 } from "../vec2/vec2";
 
@@ -18,9 +19,13 @@ export class RenderAttackTarget implements RenderSystem
     world.forEachEntity([Selected.t, AttackTarget.t], (id : number, components : any[]) =>
     {
       let [, attackTarget] = components as [Selected, AttackTarget];
+      while (!world.containsEntity(attackTarget.target) && world.containsEntity(attackTarget.delegate))
+      {
+        attackTarget = world.getComponent(attackTarget.delegate, AttackTarget.t) as AttackTarget;
+      }
+
       if (!world.containsEntity(attackTarget.target))
       {
-        attackTarget.target = null;
         return;
       }
 
@@ -31,9 +36,30 @@ export class RenderAttackTarget implements RenderSystem
       this.renderer.drawCircle(targetPos, 10, RenderAttackTarget.targetProps, this.viewport);
       this.renderer.drawCircle(targetPos, 5, RenderAttackTarget.targetProps, this.viewport);
 
+      let originPos : Vec2 = null;
       let position = world.getComponent(id, Position.t) as Position;
       if (position)
-        this.renderer.drawLine(targetPos, this.spatialCache.interpolatePosition(position, id, interp), RenderAttackTarget.targetProps, this.viewport);
+      {
+        originPos = this.spatialCache.interpolatePosition(position, id, interp);
+      }
+      else
+      {
+        let squadron = world.getComponent(id, Squadron.t) as Squadron;
+        if (squadron)
+        {
+          let flagship = squadron.flagship;
+          let position = world.getComponent(squadron.flagship, Position.t) as Position;
+          if (position)
+          {
+            originPos = this.spatialCache.interpolatePosition(position, squadron.flagship, interp);
+          }
+        }
+      }
+
+      if (originPos)
+      {
+        this.renderer.drawLine(targetPos, originPos, RenderAttackTarget.targetProps, this.viewport);
+      }
     });
   }
 

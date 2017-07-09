@@ -33,6 +33,12 @@ export class Shooting implements System
       else if (armed.cooldownRemaining > 0)
         return;
 
+      while (!world.containsEntity(target.target) && world.containsEntity(target.delegate))
+      {
+        target.target = null;
+        target = world.getComponent(target.delegate, AttackTarget.t) as AttackTarget;
+      }
+
       if (!world.containsEntity(target.target))
       {
         target.target = null;

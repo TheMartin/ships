@@ -47,6 +47,20 @@ function entityName(world : World, id : number) : string
   return name ? name.name : null;
 };
 
+function renderMoveTarget(moveTarget : MoveToTarget) : VdomElement
+{
+  return moveTarget && moveTarget.order.kind === "MoveTo"
+    ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.order.target))
+    : null;
+}
+
+function renderAttackTarget(attackTarget : AttackTarget, world : World) : VdomElement
+{
+  return attackTarget && attackTarget.target
+    ? VdomElement.create("span", {"class" : "atk"}, entityName(world, attackTarget.target))
+    : null;
+}
+
 function renderShip(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
 {
   let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = world.getOptionalComponents(id,
@@ -67,19 +81,15 @@ function renderShip(id : number, world : World, spatialCache : SpatialCache, int
       ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, rotation, spatialCache, id, interp, velocity))
       : null,
 
-    moveTarget && moveTarget.order.kind === "MoveTo"
-      ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.order.target))
-      : null,
+    renderMoveTarget(moveTarget),
 
-    attackTarget && attackTarget.target
-      ? VdomElement.create("span", {"class" : "atk"}, entityName(world, attackTarget.target))
-      : null
+    renderAttackTarget(attackTarget, world)
   );
 };
 
 function renderSquadron(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
 {
-  let [name, squadron, moveTarget] = world.getOptionalComponents(id, [Named.t, Squadron.t, MoveToTarget.t]) as [Named, Squadron, MoveToTarget];
+  let [name, squadron, moveTarget, attackTarget] = world.getOptionalComponents(id, [Named.t, Squadron.t, MoveToTarget.t, AttackTarget.t]) as [Named, Squadron, MoveToTarget, AttackTarget];
   const squadronId = id;
   const flagship = squadron.flagship;
   const squadronMembers = world.findEntities([SquadronMember.t], (id : number, components : any[]) =>
@@ -94,9 +104,9 @@ function renderSquadron(id : number, world : World, spatialCache : SpatialCache,
       ? VdomElement.create("span", {"class" : "name"}, name.name)
       : null,
 
-    moveTarget && moveTarget.order.kind === "MoveTo"
-      ? VdomElement.create("span", {"class" : "tgt"}, positionToString(moveTarget.order.target))
-      : null,
+    renderMoveTarget(moveTarget),
+
+    renderAttackTarget(attackTarget, world),
 
     VdomElement.create("div", {"class" : "members"}, ...squadronMembers.map(id => renderShip(id, world, spatialCache, interp)) )
   );
