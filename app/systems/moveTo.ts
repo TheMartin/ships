@@ -84,7 +84,7 @@ export class MoveToTarget implements NetworkComponent
 
   serialize() : any[]
   {
-    return this.order.serialize();
+    return serialize(this.order);
   }
 
   static deserialize(data : any[]) : MoveToTarget

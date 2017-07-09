@@ -25,7 +25,7 @@ export class JoinOrder implements NetworkUserEvent
 
   static deserialize(data : any[]) : JoinOrder
   {
-    return new JoinOrder(data[0], data[1]);
+    return new JoinOrder(data[0] as number, data[1] as number);
   }
 
   name : string = JoinOrder.t;
@@ -43,7 +43,7 @@ export class FormSquadronOrder implements NetworkUserEvent
 
   static deserialize(data : any[]) : FormSquadronOrder
   {
-    return new FormSquadronOrder(data[0]);
+    return new FormSquadronOrder(data[0] as number);
   }
 
   name : string = FormSquadronOrder.t;

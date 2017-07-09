@@ -9,15 +9,27 @@ import { Vec2, dot, norm, norm2 } from "../vec2/vec2";
 import { angleDiff } from "../util/angle";
 import { clamp } from "../util/clamp";
 
-export class Squadron
+export class Squadron implements NetworkComponent
 {
   constructor(public flagship : number) {}
+
+  equal(other : Squadron) : boolean { return this.flagship === other.flagship; }
+  clone() : Squadron { return new Squadron(this.flagship); }
+  serialize() : any[] { return [ this.flagship ]; }
+  static deserialize(data : any[]) : Squadron { return new Squadron(data[0] as number); }
+
   static readonly t : string = "Squadron";
 };
 
-export class SquadronMember
+export class SquadronMember implements NetworkComponent
 {
   constructor(public squadron : number, public offset : Vec2) {}
+
+  equal(other : SquadronMember) : boolean { return this.squadron === other.squadron && ((this.offset === null && other.offset === null) || (this.offset !== null && other.offset !== null && this.offset.equal(other.offset))); }
+  clone() : SquadronMember { return new SquadronMember(this.squadron, this.offset ? this.offset.clone() : null); }
+  serialize() : any[] { return [ this.squadron, ...(this.offset ? [ this.offset.x, this.offset.y ] : [ null, null ]) ]; }
+  static deserialize(data : any[]) : SquadronMember { return new SquadronMember(data[0] as number, data[1] ? new Vec2(data[1] as number, data[2] as number) : null); }
+
   static readonly t : string = "SquadronMember";
 };
 
@@ -38,6 +50,7 @@ export class CheckSquadronIntegrity implements System
         });
         if (members.length > 0)
         {
+          squadron.flagship = members[0];
           deferred.push((world : World) =>
           {
             let leadMember = world.getComponent(members[0], SquadronMember.t) as SquadronMember;

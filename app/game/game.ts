@@ -96,7 +96,9 @@ export class Game
       Targetable.t,
       AttackTarget.t,
       Damageable.t,
-      TracerEffect.t
+      TracerEffect.t,
+      Squadron.t,
+      SquadronMember.t
     ];
     this.networkComponentDeserializers = new Map<string, (data : any[]) => any>([
       [Position.t, Position.deserialize],
@@ -111,7 +113,9 @@ export class Game
       [Targetable.t, Targetable.deserialize],
       [AttackTarget.t, AttackTarget.deserialize],
       [Damageable.t, Damageable.deserialize],
-      [TracerEffect.t, TracerEffect.deserialize]
+      [TracerEffect.t, TracerEffect.deserialize],
+      [Squadron.t, Squadron.deserialize],
+      [SquadronMember.t, SquadronMember.deserialize]
     ]);
     this.networkEventTypes = [
       AttackOrder.t,
@@ -384,6 +388,7 @@ export class Game
 
     this.updateSystems =
     [
+      new CheckSquadronIntegrity(),
       new ChooseRandomMoveTarget(ai, new Vec2(0, 0), new Vec2(1000, 1000)),
       new UpdateMovement(50, Math.PI / 3),
       new SquadronMovement(50, Math.PI / 3),
@@ -391,7 +396,6 @@ export class Game
       new Shooting(),
       new MoveKinematic(),
       new CheckDestroyed(),
-      new CheckSquadronIntegrity(),
       new FinishMovement()
     ];
 
@@ -418,7 +422,9 @@ export class Game
 
     this.updateSystems =
     [
+      new CheckSquadronIntegrity(),
       new UpdateMovement(50, Math.PI / 3),
+      new SquadronMovement(50, Math.PI / 3),
       new MoveProjectiles(),
       new Shooting(),
       new MoveKinematic(),
@@ -431,6 +437,7 @@ export class Game
       new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
+      new OrderJoin(this.inputQueue, player, this.ui, this.viewport),
       new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
@@ -451,6 +458,7 @@ export class Game
       new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
+      new OrderJoin(this.inputQueue, player, this.ui, this.viewport),
       new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
