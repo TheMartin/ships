@@ -7,6 +7,7 @@ import { UserEvent, UserInputQueue } from "../ui/userInputQueue";
 
 import { NetworkComponent } from "../network/networkComponent";
 import { Position } from "../systems/spatial";
+import { Squadron, SquadronMember } from "../systems/squadron";
 import { Controlled, Player } from "../systems/playable";
 import { SpatialCache } from "../systems/spatialCache";
 
@@ -187,13 +188,25 @@ export class DrawSelectedBox implements RenderSystem
 
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Selected.t, Position.t], (id : number, components : any[]) =>
+    let selected = world.findEntities([Selected.t]);
+    let selectedSquadrons = selected.filter(id => world.getComponent(id, Squadron.t) !== null);
+    let selectBoxes = selected.filter(id => world.getComponent(id, Squadron.t) === null);
+    let selectedShips = world.findEntities([SquadronMember.t], (id : number, components : any[]) =>
     {
-      let [, position] = components as [Selected, Position];
-      let pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, id, interp));
-      const size = new Vec2(10, 10).multiply(this.viewport.scale);
-      this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), DrawSelectedBox.props);
+      let [squadronMember] = components as [SquadronMember];
+      return selectedSquadrons.find(id => id === squadronMember.squadron) !== undefined;
     });
+    let boxPositions = selectBoxes.concat(selectedShips)
+      .map(id => [id, world.getComponent(id, Position.t)])
+      .filter(([id, position]) => position !== null)
+      .map(([id, position]) => this.spatialCache.interpolatePosition(position, id, interp));
+
+    const size = new Vec2(10, 10).multiply(this.viewport.scale);
+    for (let box of boxPositions)
+    {
+      const pos = this.viewport.transform(box);
+      this.renderer.drawRect(pos.clone().subtract(size), pos.clone().add(size), DrawSelectedBox.props);
+    }
   }
 
   private static readonly props : RenderProps = { stroke : "rgb(0, 255, 0)", lineWidth: 3 };
