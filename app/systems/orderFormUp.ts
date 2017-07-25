@@ -39,7 +39,7 @@ function createSquadron(flagship : number, world : World) : number
   const squadronId = World.nextEntityId();
   world.addEntity(squadronId, {
     [Squadron.t] : new Squadron(flagship),
-    [Named.t] : new Named("Squadron"),
+    [Named.t] : new Named("Squadron " + squadronId),
     [MoveToTarget.t] : new MoveToTarget(),
     [AttackTarget.t] : new AttackTarget(),
     [Controlled.t] : new Controlled(controlled.player)
