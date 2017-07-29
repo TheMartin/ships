@@ -1,8 +1,7 @@
 import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
-import { Viewport } from "../renderer/renderer";
-import { UiManager, Events, MouseButton } from "../ui/uiManager";
+import { UiManager, Events } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { NetworkUserEvent } from "../network/networkUserEvent";
 import { MoveToTarget, Join } from "../systems/moveTo";
@@ -58,7 +57,7 @@ function createSquadron(flagship : number, world : World) : number
 
 export class OrderFormUp implements RenderSystem
 {
-  constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager, viewport : Viewport)
+  constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager)
   {
     inputQueue.setHandler(FormUpOrder.t, (evt : FormUpOrder, interp : number, world : World) =>
     {

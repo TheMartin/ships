@@ -31,3 +31,4 @@ It's a work in progress.
 ** Right-click on hostile ships to order selected ships to engage them.
 ** When selected, left-click into empty space to cancel selection.
 ** Press the _G_ key to order selected ships to form a squadron.
+** Press the _S_ key to order selected squadrons to split into individual ships.

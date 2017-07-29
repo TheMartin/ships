@@ -18,6 +18,7 @@ import { Player, PlayerType } from "../systems/playable";
 import { RenderAttackTarget } from "../systems/renderAttackTarget";
 import { OrderAttack, AttackOrder } from "../systems/orderAttack";
 import { FormUpOrder, OrderFormUp } from "../systems/orderFormUp";
+import { SplitOrder, OrderSplit } from "../systems/orderSplit";
 import { Shooting } from "../systems/armed";
 import { MoveProjectiles } from "../systems/projectile";
 import { CheckDestroyed } from "../systems/damageable";
@@ -120,12 +121,14 @@ export class Game
     this.networkEventTypes = [
       AttackOrder.t,
       MoveOrder.t,
-      FormUpOrder.t
+      FormUpOrder.t,
+      SplitOrder.t
     ];
     this.networkEventDeserializers = new Map<string, (data : any[]) => NetworkUserEvent>([
       [AttackOrder.t, AttackOrder.deserialize],
       [MoveOrder.t, MoveOrder.deserialize],
-      [FormUpOrder.t, FormUpOrder.deserialize]
+      [FormUpOrder.t, FormUpOrder.deserialize],
+      [SplitOrder.t, SplitOrder.deserialize]
     ]);
     this.world = new World(this.componentTypes);
   }
@@ -402,7 +405,8 @@ export class Game
       new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
-      new OrderFormUp(this.inputQueue, player, this.ui, this.viewport),
+      new OrderFormUp(this.inputQueue, player, this.ui),
+      new OrderSplit(this.inputQueue, player, this.ui),
       new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
@@ -435,7 +439,8 @@ export class Game
       new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
-      new OrderFormUp(this.inputQueue, player, this.ui, this.viewport),
+      new OrderFormUp(this.inputQueue, player, this.ui),
+      new OrderSplit(this.inputQueue, player, this.ui),
       new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
@@ -456,7 +461,8 @@ export class Game
       new ViewportController(this.ui, 1000, 2, this.viewport),
       new SelectionSystem(this.inputQueue, this.spatialCache, player, this.ui, this.renderer, this.viewport),
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
-      new OrderFormUp(this.inputQueue, player, this.ui, this.viewport),
+      new OrderFormUp(this.inputQueue, player, this.ui),
+      new OrderSplit(this.inputQueue, player, this.ui),
       new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
