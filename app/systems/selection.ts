@@ -67,18 +67,15 @@ function isWithin(v : Vec2, box : Box) : boolean
 export class SelectSingle implements UserEvent
 {
   constructor(public entity : number) {}
-  name : string = "SelectSingle";
 };
 
 export class SelectBox implements UserEvent
 {
   constructor(public box : Box) {}
-  name : string = "SelectBox";
 };
 
 export class Unselect implements UserEvent
 {
-  name : string = "Unselect";
 };
 
 function unselectAll(world : World)
@@ -90,7 +87,7 @@ export class SelectionSystem implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private spatialCache : SpatialCache, player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
-    inputQueue.setHandler("SelectSingle", (evt : SelectSingle, interp : number, world : World) =>
+    inputQueue.setHandler(SelectSingle, (evt : SelectSingle, interp : number, world : World) =>
     {
       unselectAll(world);
 
@@ -105,12 +102,12 @@ export class SelectionSystem implements RenderSystem
       }
     });
 
-    inputQueue.setHandler("Unselect", (evt : Unselect, interp : number, world : World) =>
+    inputQueue.setHandler(Unselect, (evt : Unselect, interp : number, world : World) =>
     {
       unselectAll(world);
     });
 
-    inputQueue.setHandler("SelectBox", (evt : SelectBox, interp : number, world : World) =>
+    inputQueue.setHandler(SelectBox, (evt : SelectBox, interp : number, world : World) =>
     {
       unselectAll(world);
 

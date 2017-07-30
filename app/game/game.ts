@@ -39,7 +39,7 @@ import { TracerEffect } from "../systems/tracerEffect";
 import { Projectile } from "../systems/projectile";
 
 import { UiManager } from "../ui/uiManager";
-import { UserInputQueue, UserEvent } from "../ui/userInputQueue";
+import { UserInputQueue, UserEvent, UserEventHandler } from "../ui/userInputQueue";
 import { NetworkUserEvent } from "../network/networkUserEvent";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { Vec2, lerp } from "../vec2/vec2";
@@ -57,6 +57,8 @@ enum MessageType
   ClientUpdate,
   ClientUpdateAck
 };
+
+type Class = new (...args : any[]) => any;
 
 export class Game
 {
@@ -84,19 +86,14 @@ export class Game
       Squadron,
       SquadronMember
     ];
-    this.componentMap = new Map<string, any>(componentTypes.map( (type : any) : [string, any] => [type.t, type] ));
-    this.networkEventTypes = [
-      AttackOrder.t,
-      MoveOrder.t,
-      FormUpOrder.t,
-      SplitOrder.t
+    this.componentMap = new Map<string, Class>(componentTypes.map( (type : Class) : [string, Class] => [type.name, type] ));
+    let eventTypes = [
+      AttackOrder,
+      MoveOrder,
+      FormUpOrder,
+      SplitOrder
     ];
-    this.networkEventDeserializers = new Map<string, (data : any[]) => NetworkUserEvent>([
-      [AttackOrder.t, AttackOrder.deserialize],
-      [MoveOrder.t, MoveOrder.deserialize],
-      [FormUpOrder.t, FormUpOrder.deserialize],
-      [SplitOrder.t, SplitOrder.deserialize]
-    ]);
+    this.networkEventMap = new Map<string, Class>(eventTypes.map( (type : Class) : [string, Class] => [type.name, type] ));
     this.world = new World(componentTypes);
   }
 
@@ -139,7 +136,7 @@ export class Game
     this.setUpHostSystems();
 
     let dummySnapshot = this.makeEmptyNetworkSnapshot();
-    let snapshotHistory : { ack : number, snapshot : Map<any, ComponentStorage> }[] = [];
+    let snapshotHistory : { ack : number, snapshot : Map<Class, ComponentStorage> }[] = [];
     let serverAckCounter = 0;
     let clientAckCounter = -1;
 
@@ -172,12 +169,12 @@ export class Game
       setTimeout(sendUpdatesFn, 1000 / netTickRate);
       const snapshot = this.world.getSnapshot(this.getNetworkComponentTypes());
       const oldSnapshot = snapshotHistory.length > 0 ? snapshotHistory[0].snapshot : dummySnapshot;
-      const clientDelta = this.getNetworkComponentTypes().map((type : any) : [any, ComponentStorage] =>
+      const clientDelta = this.getNetworkComponentTypes().map((type : Class) : [Class, ComponentStorage] =>
       {
         return [type, delta(oldSnapshot.get(type), snapshot.get(type))];
       });
       const ack = serverAckCounter++;
-      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.map(([type, value] : [any, ComponentStorage]) => { return [type.name, serialize(value)]; }) });
+      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.map(([type, value] : [Class, ComponentStorage]) => { return [type.name, serialize(value)]; }) });
       snapshotHistory.push({ ack , snapshot });
     };
 
@@ -190,7 +187,14 @@ export class Game
           for (let item of history)
           {
             if (item.ack > clientAckCounter)
-              item.events.forEach(([name, ...data] : [string, any[]]) => this.inputQueue.enqueue(this.networkEventDeserializers.get(name)(data)));
+            {
+              item.events.forEach(([name, ...data] : [string, any[]]) =>
+              {
+                const type = this.networkEventMap.get(name) as any;
+                console.assert(type.deserialize !== undefined, "Unrecognized network event key : ", name);
+                this.inputQueue.enqueue(type.deserialize(data));
+              });
+            }
           }
           clientAckCounter = ack;
         }
@@ -226,17 +230,17 @@ export class Game
     let clientAckCounter = 0;
 
     let unsentEvents : NetworkUserEvent[] = [];
-    let handlers : { [type : string] : (e : UserEvent, interp : number, world : World) => void } = {};
-    this.networkEventTypes.forEach(type =>
+    let handlers = new Map<string, UserEventHandler>();
+    for (let [name, type] of this.networkEventMap.entries())
     {
       let handler = this.inputQueue.getHandler(type);
-      handlers[type] = handler;
+      handlers.set(name, handler);
       this.inputQueue.setHandler(type, (e : UserEvent, interp : number, world : World) =>
       {
         handler(e, interp, world);
         unsentEvents.push(e as NetworkUserEvent);
       });
-    });
+    }
 
     this.fps = fps;
     this.lastUpdate = performance.now();
@@ -262,7 +266,7 @@ export class Game
         unsentEvents = [];
         let history = inputHistory.map((item : {ack : number, events : NetworkUserEvent[]}) : {ack : number, events : any[]} =>
         {
-          return { ack : item.ack, events : item.events.map(e => [e.name, ...e.serialize()]) };
+          return { ack : item.ack, events : item.events.map(e => [e.constructor.name, ...e.serialize()]) };
         });
         client.send({ type : MessageType.ClientUpdate, ack, history });
       }
@@ -278,13 +282,14 @@ export class Game
           this.spatialCache.update(this.world);
           delta.forEach(([key, data] : [string, any[]]) : void =>
           {
-            const type = this.componentMap.get(key);
+            const type = this.componentMap.get(key) as any;
+            console.assert(type.deserialize !== undefined, "Unrecognized network component key : ", key);
             applyDelta(snapshot.get(type), deserialize(data, type.deserialize));
           });
           this.world.replaceSnapshot(snapshot);
           inputHistory.map(item => item.events)
             .reduceRight((rhs, lhs) => lhs.concat(rhs), unsentEvents)
-            .forEach(e => handlers[e.name](e, 0, this.world));
+            .forEach(e => handlers.get(e.constructor.name)(e, 0, this.world));
           serverAckCounter = ack;
         }
         client.send({ type : MessageType.ServerUpdateAck, ack });
@@ -442,22 +447,21 @@ export class Game
     ];
   }
 
-  private getNetworkComponentTypes() : any[]
+  private getNetworkComponentTypes() : Class[]
   {
-    return Array.from(this.componentMap.values()).filter( type => type.deserialize !== undefined );
+    return Array.from(this.componentMap.values()).filter( (type : any) => type.deserialize !== undefined ) as Class[];
   }
 
-  private makeEmptyNetworkSnapshot() : Map<any, ComponentStorage>
+  private makeEmptyNetworkSnapshot() : Map<Class, ComponentStorage>
   {
-    return new Map<any, ComponentStorage>( this.getNetworkComponentTypes().map((type : any) : [any, ComponentStorage] => { return [type, new Map<number, any>()]; } ) );
+    return new Map<Class, ComponentStorage>( this.getNetworkComponentTypes().map((type : Class) : [Class, ComponentStorage] => { return [type, new Map<number, any>()]; } ) );
   }
 
   private lastUpdate : number = 0;
   private lastDraw : number = 0;
   private fps : number = 0;
-  private componentMap : Map<string, any> = null;
-  private networkEventTypes : string[] = [];
-  private networkEventDeserializers : Map<string, (data : any[]) => any> = null;
+  private componentMap : Map<string, Class> = null;
+  private networkEventMap : Map<string, Class> = null;
   private world : World = null;
   private spatialCache : SpatialCache = new SpatialCache();
   private updateSystems : System[] = [];

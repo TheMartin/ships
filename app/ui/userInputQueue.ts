@@ -2,8 +2,11 @@ import { World } from "../ecs/entities";
 
 export interface UserEvent
 {
-  name : string;
 };
+
+export type UserEventHandler = (e : UserEvent, interp : number, world : World) => void;
+
+type EventClass = new (...args : any[]) => any;
 
 export class UserInputQueue
 {
@@ -12,27 +15,27 @@ export class UserInputQueue
     this.queue.push(e);
   }
 
-  getHandler(type : string) : (e : UserEvent, interp : number, world : World) => void
+  getHandler(type : EventClass) : UserEventHandler
   {
-    return this.handlers[type];
+    return this.handlers.get(type.name);
   }
 
-  setHandler(type : string, handler : (e : UserEvent, interp : number, world : World) => void)
+  setHandler(type : EventClass, handler : UserEventHandler)
   {
-    this.handlers[type] = handler;
+    this.handlers.set(type.name, handler);
   }
 
   flush(interp : number, world : World) : void
   {
     for (let e of this.queue)
     {
-      if (e.name in this.handlers)
-        this.handlers[e.name](e, interp, world);
+      if (this.handlers.has(e.constructor.name))
+        this.handlers.get(e.constructor.name)(e, interp, world);
     }
 
     this.queue = [];
   }
 
-  private handlers : { [name : string] : (e : UserEvent, interp : number, world : World) => void } = {};
+  private handlers : Map<string, UserEventHandler> = new Map<string, UserEventHandler>();
   private queue : UserEvent[] = [];
 };

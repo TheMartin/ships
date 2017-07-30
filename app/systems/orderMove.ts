@@ -24,16 +24,13 @@ export class MoveOrder implements NetworkUserEvent
   {
     return new MoveOrder(data[0], new Vec2(data[1], data[2]));
   }
-
-  name : string = MoveOrder.t;
-  static readonly t : string = "MoveOrder";
 };
 
 export class OrderMove implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager, viewport : Viewport)
   {
-    inputQueue.setHandler(MoveOrder.t, (evt : MoveOrder, interp : number, world : World) =>
+    inputQueue.setHandler(MoveOrder, (evt : MoveOrder, interp : number, world : World) =>
     {
       if (!world.containsEntity(evt.entity))
         return;

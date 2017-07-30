@@ -25,16 +25,13 @@ export class AttackOrder implements NetworkUserEvent
   {
     return new AttackOrder(data[0], data[1]);
   }
-
-  name : string = AttackOrder.t;
-  static readonly t : string = "AttackOrder";
 };
 
 export class OrderAttack implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager, viewport : Viewport)
   {
-    inputQueue.setHandler(AttackOrder.t, (evt : AttackOrder, interp : number, world : World) =>
+    inputQueue.setHandler(AttackOrder, (evt : AttackOrder, interp : number, world : World) =>
     {
       if (!world.containsEntity(evt.entity) || !world.containsEntity(evt.target))
         return;

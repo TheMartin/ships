@@ -25,16 +25,13 @@ export class SplitOrder implements NetworkUserEvent
   {
     return new SplitOrder(data[0] as number);
   }
-
-  name : string = SplitOrder.t;
-  static readonly t : string = "SplitOrder";
 };
 
 export class OrderSplit implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager)
   {
-    inputQueue.setHandler(SplitOrder.t, (evt : SplitOrder, interp : number, world : World) =>
+    inputQueue.setHandler(SplitOrder, (evt : SplitOrder, interp : number, world : World) =>
     {
       const squadron = evt.squadron;
       let entities = world.findEntities([SquadronMember], (id : number, components : any[]) =>

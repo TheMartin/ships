@@ -1,5 +1,7 @@
 export type ComponentStorage = Map<number, any>;
 
+type ComponentClass = new (...args : any[]) => any;
+
 export function delta(lhs : ComponentStorage, rhs : ComponentStorage) : ComponentStorage
 {
   let result : ComponentStorage = new Map<number, any>();
@@ -63,10 +65,10 @@ export function deserialize(data : any[], deserializer : (data : any[]) => any) 
 
 export class World
 {
-  constructor(types : any[])
+  constructor(types : ComponentClass[])
   {
-    const makeComponentStorage = (type : any) : [any, ComponentStorage] => [ type, new Map<number, any>() ];
-    this.componentData = new Map<any, ComponentStorage>(types.map(makeComponentStorage));
+    const makeComponentStorage = (type : ComponentClass) : [ComponentClass, ComponentStorage] => [ type, new Map<number, any>() ];
+    this.componentData = new Map<ComponentClass, ComponentStorage>(types.map(makeComponentStorage));
   }
 
   static nextEntityId() : number
@@ -102,19 +104,19 @@ export class World
     this.componentData.get(component.constructor).set(id, component);
   }
 
-  removeComponent(id : number, type : any) : void
+  removeComponent(id : number, type : ComponentClass) : void
   {
     this.componentData.get(type).delete(id);
   }
 
-  getComponent(id : number, type : any) : any
+  getComponent(id : number, type : ComponentClass) : any
   {
     let data = this.componentData.get(type);
     let component = data ? data.get(id) : null;
     return component ? component : null;
   }
 
-  forEachEntity(types : any[], callback : (id : number, components : any[]) => void) : void
+  forEachEntity(types : ComponentClass[], callback : (id : number, components : any[]) => void) : void
   {
     for (let id of this.findSmallestComponentFromTypes(types).keys())
     {
@@ -124,7 +126,7 @@ export class World
     }
   }
 
-  findEntities(types : any[], filter : (id : number, components : any[]) => boolean = () => true) : number[]
+  findEntities(types : ComponentClass[], filter : (id : number, components : any[]) => boolean = () => true) : number[]
   {
     let entities : number[] = [];
     for (let id of this.findSmallestComponentFromTypes(types).keys())
@@ -136,9 +138,9 @@ export class World
     return entities;
   }
 
-  getComponents(id : number, types : any[]) : any[]
+  getComponents(id : number, types : ComponentClass[]) : any[]
   {
-    let components : any[] = [];
+    let components : ComponentClass[] = [];
     for (let type of types)
     {
       let component = this.componentData.get(type).get(id);
@@ -150,18 +152,18 @@ export class World
     return components;
   };
 
-  getOptionalComponents(id : number, types : any[]) : any[]
+  getOptionalComponents(id : number, types : ComponentClass[]) : any[]
   {
     return types.map(type => this.getComponent(id, type));
   }
 
-  getSnapshot(types : any[]) : Map<any, ComponentStorage>
+  getSnapshot(types : ComponentClass[]) : Map<ComponentClass, ComponentStorage>
   {
-    const typeToKvPair = (type : any) : [any, ComponentStorage] => [ type, clone(this.componentData.get(type)) ];
-    return new Map<any, ComponentStorage>(types.map(typeToKvPair));
+    const typeToKvPair = (type : ComponentClass) : [ComponentClass, ComponentStorage] => [ type, clone(this.componentData.get(type)) ];
+    return new Map<ComponentClass, ComponentStorage>(types.map(typeToKvPair));
   }
 
-  replaceSnapshot(snapshot : Map<any, ComponentStorage>) : void
+  replaceSnapshot(snapshot : Map<ComponentClass, ComponentStorage>) : void
   {
     for (let [key, value] of snapshot.entries())
     {
@@ -169,7 +171,7 @@ export class World
     }
   }
 
-  private findSmallestComponentFromTypes(types : any[]) : ComponentStorage
+  private findSmallestComponentFromTypes(types : ComponentClass[]) : ComponentStorage
   {
     let minSize : number = Number.POSITIVE_INFINITY;
     let minElement : ComponentStorage = null;
@@ -187,6 +189,6 @@ export class World
     return minElement;
   }
 
-  private componentData : Map<any, ComponentStorage>;
+  private componentData : Map<ComponentClass, ComponentStorage>;
   private static EntityId : number = 0;
 };

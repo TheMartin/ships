@@ -26,9 +26,6 @@ export class FormUpOrder implements NetworkUserEvent
   {
     return new FormUpOrder(data as number[]);
   }
-
-  name : string = FormUpOrder.t;
-  static readonly t : string = "FormUpOrder";
 };
 
 function createSquadron(flagship : number, world : World) : number
@@ -59,7 +56,7 @@ export class OrderFormUp implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager)
   {
-    inputQueue.setHandler(FormUpOrder.t, (evt : FormUpOrder, interp : number, world : World) =>
+    inputQueue.setHandler(FormUpOrder, (evt : FormUpOrder, interp : number, world : World) =>
     {
       let entities = evt.entities.filter(e =>
       {
