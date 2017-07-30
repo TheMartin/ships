@@ -23,6 +23,4 @@ export class Named implements NetworkComponent
   {
     return new Named(data[0] as string);
   }
-
-  static readonly t : string = "Named";
 };

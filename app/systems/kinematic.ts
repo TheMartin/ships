@@ -24,8 +24,6 @@ export class Velocity implements NetworkComponent
   {
     return new Velocity(new Vec2(data[0] as number, data[1] as number));
   }
-
-  static readonly t : string = "Velocity";
 };
 
 export class AngularVelocity implements NetworkComponent
@@ -51,6 +49,4 @@ export class AngularVelocity implements NetworkComponent
   {
     return new AngularVelocity(data[0] as number);
   }
-
-  static readonly t : string = "AngularVelocity";
 };

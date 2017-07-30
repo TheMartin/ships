@@ -14,7 +14,7 @@ export class ChooseRandomMoveTarget implements System
 
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([MoveToTarget.t, Controlled.t], (id : number, components : any[]) =>
+    world.forEachEntity([MoveToTarget, Controlled], (id : number, components : any[]) =>
     {
       let [target, controlled] = components as [MoveToTarget, Controlled];
       if (controlled.player.id === this.player.id && target.order.kind === "Stop")

@@ -196,10 +196,10 @@ export class UiManager
   updateClickables(world : World, spatialCache : SpatialCache, interp : number, viewport : Viewport) : void
   {
     this.clickables = {};
-    world.forEachEntity([Position.t], (id : number, components : any[]) =>
+    world.forEachEntity([Position], (id : number, components : any[]) =>
     {
       let [position] = components as [Position];
-      if (world.getComponent(id, Selectable.t) || world.getComponent(id, Targetable.t))
+      if (world.getComponent(id, Selectable) || world.getComponent(id, Targetable))
       {
         let pos = viewport.transform(spatialCache.interpolatePosition(position, id, interp));
         this.clickables[id] = new Clickable(id, pos, 15);

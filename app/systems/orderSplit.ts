@@ -37,7 +37,7 @@ export class OrderSplit implements RenderSystem
     inputQueue.setHandler(SplitOrder.t, (evt : SplitOrder, interp : number, world : World) =>
     {
       const squadron = evt.squadron;
-      let entities = world.findEntities([SquadronMember.t], (id : number, components : any[]) =>
+      let entities = world.findEntities([SquadronMember], (id : number, components : any[]) =>
       {
         let [squadronMember] = components as [SquadronMember];
         return squadronMember.squadron == squadron;
@@ -45,14 +45,14 @@ export class OrderSplit implements RenderSystem
 
       for (let squadronMember of entities)
       {
-        world.addComponent(squadronMember, MoveToTarget.t, new MoveToTarget());
-        if (world.getComponent(squadron, Selected.t))
+        world.addComponent(squadronMember, new MoveToTarget());
+        if (world.getComponent(squadron, Selected))
         {
-          world.addComponent(squadronMember, Selected.t, new Selected());
+          world.addComponent(squadronMember, new Selected());
         }
-        (world.getComponent(squadronMember, Selectable.t) as Selectable).target = squadronMember;
-        (world.getComponent(squadronMember, AttackTarget.t) as AttackTarget).delegate = null;
-        world.removeComponent(squadronMember, SquadronMember.t);
+        (world.getComponent(squadronMember, Selectable) as Selectable).target = squadronMember;
+        (world.getComponent(squadronMember, AttackTarget) as AttackTarget).delegate = null;
+        world.removeComponent(squadronMember, SquadronMember);
       }
 
       world.removeEntity(squadron);
@@ -71,7 +71,7 @@ export class OrderSplit implements RenderSystem
   {
     if (this.orderGiven)
     {
-      let selectedSquadrons = world.findEntities([Selected.t, Squadron.t, Controlled.t], (id : number, components : any[]) =>
+      let selectedSquadrons = world.findEntities([Selected, Squadron, Controlled], (id : number, components : any[]) =>
       {
         let [, , controlled] = components as [Selected, Squadron, Controlled];
         return controlled.player.id === this.player.id;

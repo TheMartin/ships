@@ -24,8 +24,6 @@ export class Position implements NetworkComponent
   {
     return new Position(new Vec2(data[0] as number, data[1] as number));
   }
-
-  static readonly t : string = "Position";
 };
 
 export class Rotation implements NetworkComponent
@@ -51,6 +49,4 @@ export class Rotation implements NetworkComponent
   {
     return new Rotation(data[0] as number);
   }
-
-  static readonly t : string = "Rotation";
 };

@@ -21,8 +21,6 @@ export class Targetable implements NetworkComponent
   {
     return new Targetable();
   }
-
-  static readonly t : string = "Targetable";
 };
 
 export class AttackTarget implements NetworkComponent
@@ -57,5 +55,4 @@ export class AttackTarget implements NetworkComponent
 
   target : number = null;
   delegate : number = null;
-  static readonly t : string = "AttackTarget";
 };

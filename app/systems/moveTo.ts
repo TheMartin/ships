@@ -100,7 +100,6 @@ export class MoveToTarget implements NetworkComponent
   }
 
   order : MoveOrder = new Stop();
-  static readonly t : string = "MoveToTarget";
 };
 
 export class UpdateMovement implements System
@@ -109,9 +108,9 @@ export class UpdateMovement implements System
 
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position.t, Rotation.t, Velocity.t, AngularVelocity.t, MoveToTarget.t], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Rotation, Velocity, AngularVelocity, MoveToTarget], (id : number, components : any[]) =>
     {
-      if (world.getComponent(id, Squadron.t))
+      if (world.getComponent(id, Squadron))
         return;
 
       let [position, rotation, velocity, angularVelocity, target] = components as [Position, Rotation, Velocity, AngularVelocity, MoveToTarget];
@@ -128,8 +127,8 @@ export class UpdateMovement implements System
         {
           if (world.containsEntity(target.order.squadron))
           {
-            const flagship = (world.getComponent(target.order.squadron, Squadron.t) as Squadron).flagship;
-            const [flagshipPos, flagshipRot] = world.getComponents(flagship, [Position.t, Rotation.t]) as [Position, Rotation];
+            const flagship = (world.getComponent(target.order.squadron, Squadron) as Squadron).flagship;
+            const [flagshipPos, flagshipRot] = world.getComponents(flagship, [Position, Rotation]) as [Position, Rotation];
             const toTarget = flagshipPos.pos.clone().subtract(position.pos);
             velocity.vel = toTarget.normalized().multiply(this.speed);
             angularVelocity.vel = Math.sign(angleDiff(rotation.angle, toTarget.angle())) * this.angularSpeed;
@@ -157,7 +156,7 @@ export class FinishMovement implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position.t, MoveToTarget.t], (id : number, components : any[]) =>
+    world.forEachEntity([Position, MoveToTarget], (id : number, components : any[]) =>
     {
       let [position, target] = components as [Position, MoveToTarget];
       switch (target.order.kind)
@@ -173,23 +172,23 @@ export class FinishMovement implements System
         case "Join":
         {
           const squadron = target.order.squadron;
-          const flagship = (world.getComponent(squadron, Squadron.t) as Squadron).flagship;
-          const flagshipPos = world.getComponent(flagship, Position.t) as Position;
+          const flagship = (world.getComponent(squadron, Squadron) as Squadron).flagship;
+          const flagshipPos = world.getComponent(flagship, Position) as Position;
           const toTarget = flagshipPos.pos.clone().subtract(position.pos);
           if (norm(toTarget) < 30)
           {
             deferred.push((world : World) =>
             {
-              let flagshipRot = world.getComponent(flagship, Rotation.t) as Rotation;
-              world.removeComponent(id, MoveToTarget.t);
-              if (world.getComponent(id, Selected.t))
+              let flagshipRot = world.getComponent(flagship, Rotation) as Rotation;
+              world.removeComponent(id, MoveToTarget);
+              if (world.getComponent(id, Selected))
               {
-                world.removeComponent(id, Selected.t);
-                world.addComponent(squadron, Selected.t, new Selected());
+                world.removeComponent(id, Selected);
+                world.addComponent(squadron, new Selected());
               }
-              (world.getComponent(id, Selectable.t) as Selectable).target = squadron;
-              (world.getComponent(id, AttackTarget.t) as AttackTarget).delegate = squadron;
-              world.addComponent(id, SquadronMember.t, new SquadronMember(squadron, toTarget.negate().rotated(flagshipRot.angle)));
+              (world.getComponent(id, Selectable) as Selectable).target = squadron;
+              (world.getComponent(id, AttackTarget) as AttackTarget).delegate = squadron;
+              world.addComponent(id, new SquadronMember(squadron, toTarget.negate().rotated(flagshipRot.angle)));
             });
           }
           break;
@@ -197,12 +196,12 @@ export class FinishMovement implements System
       }
     });
 
-    world.forEachEntity([Squadron.t, MoveToTarget.t], (id : number, components : any[]) =>
+    world.forEachEntity([Squadron, MoveToTarget], (id : number, components : any[]) =>
     {
       let [squadron, target] = components as [Squadron, MoveToTarget];
       if (target.order.kind === "MoveTo")
       {
-        const flagshipPos = world.getComponent(squadron.flagship, Position.t) as Position;
+        const flagshipPos = world.getComponent(squadron.flagship, Position) as Position;
         const toTarget = target.order.target.clone().subtract(flagshipPos.pos);
         if (norm(toTarget) < 0.25)
           target.order = new Stop();

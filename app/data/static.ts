@@ -45,20 +45,20 @@ export class Static
 
   static makeShip(id : number, pos : Vec2, rot : number, name : string, shape : Shape, player : Player)
   {
-    return {
-      [Position.t] : new Position(pos),
-      [Rotation.t] : new Rotation(rot),
-      [Velocity.t] : new Velocity(new Vec2(0, 0)),
-      [AngularVelocity.t] : new AngularVelocity(0),
-      [RenderShape.t] : new RenderShape(shape),
-      [MoveToTarget.t] : new MoveToTarget(),
-      [Selectable.t] : new Selectable(id),
-      [Named.t] : new Named(name),
-      [Controlled.t] : new Controlled(player),
-      [Targetable.t] : new Targetable(),
-      [AttackTarget.t] : new AttackTarget(),
-      [Armed.t] : new Armed(0.75, 1000, 350, 20),
-      [Damageable.t] : new Damageable(300)
-    };
+    return [
+      new Position(pos),
+      new Rotation(rot),
+      new Velocity(new Vec2(0, 0)),
+      new AngularVelocity(0),
+      new RenderShape(shape),
+      new MoveToTarget(),
+      new Selectable(id),
+      new Named(name),
+      new Controlled(player),
+      new Targetable(),
+      new AttackTarget(),
+      new Armed(0.75, 1000, 350, 20),
+      new Damageable(300)
+    ];
   };
 };

@@ -34,8 +34,6 @@ export class RenderShape implements NetworkComponent
   {
     return new RenderShape(Static[data[0] as string]);
   }
-
-  static readonly t : string = "RenderShape";
 };
 
 export class ShapeRenderer implements RenderSystem
@@ -44,10 +42,10 @@ export class ShapeRenderer implements RenderSystem
 
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([RenderShape.t, Position.t], (id : number, components : any[]) =>
+    world.forEachEntity([RenderShape, Position], (id : number, components : any[]) =>
     {
       let [shape, position] = components as [RenderShape, Position];
-      let rotation = world.getComponent(id, Rotation.t) as Rotation;
+      let rotation = world.getComponent(id, Rotation) as Rotation;
 
       this.renderer.drawShape(shape.shape,
         this.spatialCache.interpolatePosition(position, id, interp),

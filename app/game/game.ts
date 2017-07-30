@@ -64,60 +64,27 @@ export class Game
   {
     this.players = [new Player(PlayerType.Local, 0), new Player(PlayerType.Ai, 1)];
     this.viewport = new Viewport(new Vec2(0, 0), 0, 1);
-    this.componentTypes = [
-      Position.t,
-      Rotation.t,
-      Velocity.t,
-      AngularVelocity.t,
-      RenderShape.t,
-      MoveToTarget.t,
-      Selectable.t,
-      Selected.t,
-      Named.t,
-      Controlled.t,
-      Targetable.t,
-      AttackTarget.t,
-      Armed.t,
-      Damageable.t,
-      TracerEffect.t,
-      Projectile.t,
-      Squadron.t,
-      SquadronMember.t
+    let componentTypes = [
+      Position,
+      Rotation,
+      Velocity,
+      AngularVelocity,
+      RenderShape,
+      MoveToTarget,
+      Selectable,
+      Selected,
+      Named,
+      Controlled,
+      Targetable,
+      AttackTarget,
+      Armed,
+      Damageable,
+      TracerEffect,
+      Projectile,
+      Squadron,
+      SquadronMember
     ];
-    this.networkComponentTypes = [
-      Position.t,
-      Rotation.t,
-      Velocity.t,
-      AngularVelocity.t,
-      RenderShape.t,
-      MoveToTarget.t,
-      Selectable.t,
-      Named.t,
-      Controlled.t,
-      Targetable.t,
-      AttackTarget.t,
-      Damageable.t,
-      TracerEffect.t,
-      Squadron.t,
-      SquadronMember.t
-    ];
-    this.networkComponentDeserializers = new Map<string, (data : any[]) => any>([
-      [Position.t, Position.deserialize],
-      [Rotation.t, Rotation.deserialize],
-      [Velocity.t, Velocity.deserialize],
-      [AngularVelocity.t, AngularVelocity.deserialize],
-      [RenderShape.t, RenderShape.deserialize],
-      [MoveToTarget.t, MoveToTarget.deserialize],
-      [Selectable.t, Selectable.deserialize],
-      [Named.t, Named.deserialize],
-      [Controlled.t, Controlled.deserialize],
-      [Targetable.t, Targetable.deserialize],
-      [AttackTarget.t, AttackTarget.deserialize],
-      [Damageable.t, Damageable.deserialize],
-      [TracerEffect.t, TracerEffect.deserialize],
-      [Squadron.t, Squadron.deserialize],
-      [SquadronMember.t, SquadronMember.deserialize]
-    ]);
+    this.componentMap = new Map<string, any>(componentTypes.map( (type : any) : [string, any] => [type.t, type] ));
     this.networkEventTypes = [
       AttackOrder.t,
       MoveOrder.t,
@@ -130,7 +97,7 @@ export class Game
       [FormUpOrder.t, FormUpOrder.deserialize],
       [SplitOrder.t, SplitOrder.deserialize]
     ]);
-    this.world = new World(this.componentTypes);
+    this.world = new World(componentTypes);
   }
 
   startSingleplayer(fps : number) : void
@@ -172,7 +139,7 @@ export class Game
     this.setUpHostSystems();
 
     let dummySnapshot = this.makeEmptyNetworkSnapshot();
-    let snapshotHistory : { ack : number, snapshot : Map<string, ComponentStorage> }[] = [];
+    let snapshotHistory : { ack : number, snapshot : Map<any, ComponentStorage> }[] = [];
     let serverAckCounter = 0;
     let clientAckCounter = -1;
 
@@ -203,14 +170,14 @@ export class Game
     let sendUpdatesFn = () =>
     {
       setTimeout(sendUpdatesFn, 1000 / netTickRate);
-      const snapshot = this.world.getSnapshot(this.networkComponentTypes);
+      const snapshot = this.world.getSnapshot(this.getNetworkComponentTypes());
       const oldSnapshot = snapshotHistory.length > 0 ? snapshotHistory[0].snapshot : dummySnapshot;
-      const clientDelta = this.networkComponentTypes.map((key : string) : [string, ComponentStorage] =>
+      const clientDelta = this.getNetworkComponentTypes().map((type : any) : [any, ComponentStorage] =>
       {
-        return [key, delta(oldSnapshot.get(key), snapshot.get(key))];
+        return [type, delta(oldSnapshot.get(type), snapshot.get(type))];
       });
       const ack = serverAckCounter++;
-      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.map(([key, value] : [string, ComponentStorage]) => { return [key, serialize(value)]; }) });
+      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.map(([type, value] : [any, ComponentStorage]) => { return [type.name, serialize(value)]; }) });
       snapshotHistory.push({ ack , snapshot });
     };
 
@@ -311,7 +278,8 @@ export class Game
           this.spatialCache.update(this.world);
           delta.forEach(([key, data] : [string, any[]]) : void =>
           {
-            applyDelta(snapshot.get(key), deserialize(data, this.networkComponentDeserializers.get(key)));
+            const type = this.componentMap.get(key);
+            applyDelta(snapshot.get(type), deserialize(data, type.deserialize));
           });
           this.world.replaceSnapshot(snapshot);
           inputHistory.map(item => item.events)
@@ -474,17 +442,20 @@ export class Game
     ];
   }
 
-  private makeEmptyNetworkSnapshot() : Map<string, ComponentStorage>
+  private getNetworkComponentTypes() : any[]
   {
-    return new Map<string, ComponentStorage>( this.networkComponentTypes.map((key : string) : [string, ComponentStorage] => { return [key, new Map<number, any>()]; } ) );
+    return Array.from(this.componentMap.values()).filter( type => type.deserialize !== undefined );
+  }
+
+  private makeEmptyNetworkSnapshot() : Map<any, ComponentStorage>
+  {
+    return new Map<any, ComponentStorage>( this.getNetworkComponentTypes().map((type : any) : [any, ComponentStorage] => { return [type, new Map<number, any>()]; } ) );
   }
 
   private lastUpdate : number = 0;
   private lastDraw : number = 0;
   private fps : number = 0;
-  private componentTypes : string[] = [];
-  private networkComponentTypes : string[] = [];
-  private networkComponentDeserializers : Map<string, (data : any[]) => any> = null;
+  private componentMap : Map<string, any> = null;
   private networkEventTypes : string[] = [];
   private networkEventDeserializers : Map<string, (data : any[]) => any> = null;
   private world : World = null;

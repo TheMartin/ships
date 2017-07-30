@@ -38,7 +38,7 @@ export class OrderMove implements RenderSystem
       if (!world.containsEntity(evt.entity))
         return;
 
-      let moveTarget = world.getComponent(evt.entity, MoveToTarget.t) as MoveToTarget;
+      let moveTarget = world.getComponent(evt.entity, MoveToTarget) as MoveToTarget;
       if (moveTarget)
         moveTarget.order = new MoveTo(evt.target);
     });
@@ -56,7 +56,7 @@ export class OrderMove implements RenderSystem
   {
     for (let order of this.orderQueue)
     {
-      world.forEachEntity([Selected.t, MoveToTarget.t, Controlled.t], (id : number, components : any[]) =>
+      world.forEachEntity([Selected, MoveToTarget, Controlled], (id : number, components : any[]) =>
       {
         let [, , controlled] = components as [Selected, MoveToTarget, Controlled];
         if (controlled.player.id === this.player.id)

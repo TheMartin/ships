@@ -8,12 +8,12 @@ export class SpatialCache
   {
     this.positions.clear();
     this.rotations.clear();
-    world.forEachEntity([Position.t], (id : number, components : any[]) =>
+    world.forEachEntity([Position], (id : number, components : any[]) =>
     {
       let [position] = components as [Position];
       this.positions.set(id, new Position(position.pos.clone()));
     });
-    world.forEachEntity([Rotation.t], (id : number, components : any[]) =>
+    world.forEachEntity([Rotation], (id : number, components : any[]) =>
     {
       let [rotation] = components as [Rotation];
       this.rotations.set(id, new Rotation(rotation.angle));

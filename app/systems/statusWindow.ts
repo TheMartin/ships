@@ -43,7 +43,7 @@ function entityName(world : World, id : number) : string
   if (!world.containsEntity(id))
     return null;
 
-  let name = world.getComponent(id, Named.t) as Named;
+  let name = world.getComponent(id, Named) as Named;
   return name ? name.name : null;
 };
 
@@ -64,7 +64,7 @@ function renderAttackTarget(attackTarget : AttackTarget, world : World) : VdomEl
 function renderShip(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
 {
   let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = world.getOptionalComponents(id,
-    [Named.t, Position.t, Rotation.t, Velocity.t, MoveToTarget.t, AttackTarget.t, Damageable.t]
+    [Named, Position, Rotation, Velocity, MoveToTarget, AttackTarget, Damageable]
     ) as [Named, Position, Rotation, Velocity, MoveToTarget, AttackTarget, Damageable];
 
   return VdomElement.create("div", { "class" : "ship" },
@@ -89,10 +89,10 @@ function renderShip(id : number, world : World, spatialCache : SpatialCache, int
 
 function renderSquadron(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
 {
-  let [name, squadron, moveTarget, attackTarget] = world.getOptionalComponents(id, [Named.t, Squadron.t, MoveToTarget.t, AttackTarget.t]) as [Named, Squadron, MoveToTarget, AttackTarget];
+  let [name, squadron, moveTarget, attackTarget] = world.getOptionalComponents(id, [Named, Squadron, MoveToTarget, AttackTarget]) as [Named, Squadron, MoveToTarget, AttackTarget];
   const squadronId = id;
   const flagship = squadron.flagship;
-  const squadronMembers = world.findEntities([SquadronMember.t], (id : number, components : any[]) =>
+  const squadronMembers = world.findEntities([SquadronMember], (id : number, components : any[]) =>
   {
     let [member] = components as [SquadronMember];
     return member.squadron === squadronId;
@@ -123,10 +123,10 @@ export class StatusWindow implements RenderSystem
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     let elem = VdomElement.create("div", {"class" : "window"});
-    world.forEachEntity([Selected.t], (id : number, components : any[]) =>
+    world.forEachEntity([Selected], (id : number, components : any[]) =>
     {
       elem.children.push(
-        world.getComponent(id, Squadron.t)
+        world.getComponent(id, Squadron)
         ? renderSquadron(id, world, this.spatialCache, interp)
         : renderShip(id, world, this.spatialCache, interp)
       );

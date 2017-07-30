@@ -30,8 +30,6 @@ export class TracerEffect implements NetworkComponent
   {
     return new TracerEffect();
   }
-
-  static readonly t : string = "TracerEffect";
 };
 
 export class RenderTracer implements RenderSystem
@@ -40,7 +38,7 @@ export class RenderTracer implements RenderSystem
 
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Position.t, Velocity.t, TracerEffect.t], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Velocity, TracerEffect], (id : number, components : any[]) =>
     {
       let [position, velocity,] = components as [Position, Velocity, TracerEffect];
 

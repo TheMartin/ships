@@ -16,14 +16,13 @@ export class Projectile
     this.lifetime = range / speed;
   }
   public lifetime : number = 0;
-  static readonly t : string = "Projectile";
 };
 
 export class MoveProjectiles implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position.t, Rotation.t, Velocity.t, Projectile.t], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Rotation, Velocity, Projectile], (id : number, components : any[]) =>
     {
       let [position, rotation, velocity, projectile] = components as [Position, Rotation, Velocity, Projectile];
       if (projectile.lifetime < 0)
@@ -40,8 +39,8 @@ export class MoveProjectiles implements System
         return;
       }
 
-      let [targetPos, targetVel] = world.getComponents(projectile.target, [Position.t, Velocity.t]) as [Position, Velocity];
-      let [damageable] = world.getOptionalComponents(projectile.target, [Damageable.t]) as [Damageable];
+      let [targetPos, targetVel] = world.getComponents(projectile.target, [Position, Velocity]) as [Position, Velocity];
+      let [damageable] = world.getOptionalComponents(projectile.target, [Damageable]) as [Damageable];
       if (distance(targetPos.pos, position.pos) < 5)
       {
         if (damageable)

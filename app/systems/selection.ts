@@ -38,13 +38,10 @@ export class Selectable implements NetworkComponent
   {
     return new Selectable(data[0]);
   }
-
-  static readonly t : string = "Selectable";
 };
 
 export class Selected
 {
-  static readonly t : string = "Selected";
 };
 
 class Box
@@ -86,7 +83,7 @@ export class Unselect implements UserEvent
 
 function unselectAll(world : World)
 {
-  world.forEachEntity([Selected.t], (id : number, components : any[]) => { world.removeComponent(id, Selected.t); });
+  world.forEachEntity([Selected], (id : number, components : any[]) => { world.removeComponent(id, Selected); });
 }
 
 export class SelectionSystem implements RenderSystem
@@ -97,14 +94,14 @@ export class SelectionSystem implements RenderSystem
     {
       unselectAll(world);
 
-      let components = world.getComponents(evt.entity, [Selectable.t, Controlled.t]);
+      let components = world.getComponents(evt.entity, [Selectable, Controlled]);
       if (!components)
         return;
 
       let [selectable, controlled] = components as [Selectable, Controlled];
       if (controlled.player.id === player.id)
       {
-        world.addComponent(selectable.target, Selected.t, new Selected());
+        world.addComponent(selectable.target, new Selected());
       }
     });
 
@@ -117,7 +114,7 @@ export class SelectionSystem implements RenderSystem
     {
       unselectAll(world);
 
-      world.forEachEntity([Position.t, Selectable.t, Controlled.t], (id : number, components : any[]) =>
+      world.forEachEntity([Position, Selectable, Controlled], (id : number, components : any[]) =>
       {
         let [position, selectable, controlled] = components as [Position, Selectable, Controlled];
         if (controlled.player.id !== player.id)
@@ -125,7 +122,7 @@ export class SelectionSystem implements RenderSystem
 
         if (isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, id, interp)), evt.box))
         {
-          world.addComponent(selectable.target, Selected.t, new Selected());
+          world.addComponent(selectable.target, new Selected());
         }
       });
     });
@@ -188,16 +185,16 @@ export class DrawSelectedBox implements RenderSystem
 
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    let selected = world.findEntities([Selected.t]);
-    let selectedSquadrons = selected.filter(id => world.getComponent(id, Squadron.t) !== null);
-    let selectBoxes = selected.filter(id => world.getComponent(id, Squadron.t) === null);
-    let selectedShips = world.findEntities([SquadronMember.t], (id : number, components : any[]) =>
+    let selected = world.findEntities([Selected]);
+    let selectedSquadrons = selected.filter(id => world.getComponent(id, Squadron) !== null);
+    let selectBoxes = selected.filter(id => world.getComponent(id, Squadron) === null);
+    let selectedShips = world.findEntities([SquadronMember], (id : number, components : any[]) =>
     {
       let [squadronMember] = components as [SquadronMember];
       return selectedSquadrons.find(id => id === squadronMember.squadron) !== undefined;
     });
     let boxPositions = selectBoxes.concat(selectedShips)
-      .map(id => [id, world.getComponent(id, Position.t)])
+      .map(id => [id, world.getComponent(id, Position)])
       .filter(([id, position]) => position !== null)
       .map(([id, position]) => this.spatialCache.interpolatePosition(position, id, interp));
 

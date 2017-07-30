@@ -16,7 +16,7 @@ export class RenderMoveTarget implements RenderSystem
 
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Selected.t, MoveToTarget.t], (id : number, components : any[]) =>
+    world.forEachEntity([Selected, MoveToTarget], (id : number, components : any[]) =>
     {
       let [, moveTarget] = components as [Selected, MoveToTarget];
       if (moveTarget.order.kind !== "MoveTo")
@@ -27,18 +27,18 @@ export class RenderMoveTarget implements RenderSystem
       this.renderer.drawCircle(target, 5, RenderMoveTarget.targetProps, this.viewport);
 
       let originPos : Vec2 = null;
-      let position = world.getComponent(id, Position.t) as Position;
+      let position = world.getComponent(id, Position) as Position;
       if (position)
       {
         originPos = this.spatialCache.interpolatePosition(position, id, interp);
       }
       else
       {
-        let squadron = world.getComponent(id, Squadron.t) as Squadron;
+        let squadron = world.getComponent(id, Squadron) as Squadron;
         if (squadron)
         {
           let flagship = squadron.flagship;
-          let position = world.getComponent(squadron.flagship, Position.t) as Position;
+          let position = world.getComponent(squadron.flagship, Position) as Position;
           if (position)
           {
             originPos = this.spatialCache.interpolatePosition(position, squadron.flagship, interp);

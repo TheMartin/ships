@@ -39,7 +39,7 @@ export class OrderAttack implements RenderSystem
       if (!world.containsEntity(evt.entity) || !world.containsEntity(evt.target))
         return;
 
-      let attackTarget = world.getComponent(evt.entity, AttackTarget.t) as AttackTarget;
+      let attackTarget = world.getComponent(evt.entity, AttackTarget) as AttackTarget;
       if (attackTarget)
         attackTarget.target = evt.target;
     });
@@ -60,14 +60,14 @@ export class OrderAttack implements RenderSystem
         if (!world.containsEntity(entity))
           continue;
 
-        let components = world.getComponents(entity, [Controlled.t, Targetable.t]) as [Controlled, Targetable];
+        let components = world.getComponents(entity, [Controlled, Targetable]) as [Controlled, Targetable];
         if (!components)
           continue;
 
         let [controlled, ] = components;
         if (controlled.player.id !== this.player.id)
         {
-          world.forEachEntity([Selected.t, AttackTarget.t, Controlled.t], (id : number, components : any[]) =>
+          world.forEachEntity([Selected, AttackTarget, Controlled], (id : number, components : any[]) =>
           {
             let [, , controlled] = components as [Selected, AttackTarget, Controlled];
             if (controlled.player.id === this.player.id)

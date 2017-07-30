@@ -63,10 +63,10 @@ export function deserialize(data : any[], deserializer : (data : any[]) => any) 
 
 export class World
 {
-  constructor(types : string[])
+  constructor(types : any[])
   {
-    const makeComponentStorage = (type : string) : [string, ComponentStorage] => [ type, new Map<number, any>() ];
-    this.componentData = new Map<string, ComponentStorage>(types.map(makeComponentStorage));
+    const makeComponentStorage = (type : any) : [any, ComponentStorage] => [ type, new Map<number, any>() ];
+    this.componentData = new Map<any, ComponentStorage>(types.map(makeComponentStorage));
   }
 
   static nextEntityId() : number
@@ -74,9 +74,10 @@ export class World
     return World.EntityId++;
   }
 
-  addEntity(id : number, components : { [type : string] : any }) : void
+  addEntity(id : number, components : any[]) : void
   {
-    Object.keys(components).forEach(type => this.componentData.get(type).set(id, components[type]));
+    for (let component of components)
+      this.componentData.get(component.constructor).set(id, component);
   }
 
   removeEntity(id : number) : void
@@ -96,24 +97,24 @@ export class World
     return false;
   }
 
-  addComponent(id : number, type : string, component : any) : void
+  addComponent(id : number, component : any) : void
   {
-    this.componentData.get(type).set(id, component);
+    this.componentData.get(component.constructor).set(id, component);
   }
 
-  removeComponent(id : number, type : string) : void
+  removeComponent(id : number, type : any) : void
   {
     this.componentData.get(type).delete(id);
   }
 
-  getComponent(id : number, type : string) : any
+  getComponent(id : number, type : any) : any
   {
     let data = this.componentData.get(type);
     let component = data ? data.get(id) : null;
     return component ? component : null;
   }
 
-  forEachEntity(types : string[], callback : (id : number, components : any[]) => void) : void
+  forEachEntity(types : any[], callback : (id : number, components : any[]) => void) : void
   {
     for (let id of this.findSmallestComponentFromTypes(types).keys())
     {
@@ -123,7 +124,7 @@ export class World
     }
   }
 
-  findEntities(types : string[], filter : (id : number, components : any[]) => boolean = () => true) : number[]
+  findEntities(types : any[], filter : (id : number, components : any[]) => boolean = () => true) : number[]
   {
     let entities : number[] = [];
     for (let id of this.findSmallestComponentFromTypes(types).keys())
@@ -135,7 +136,7 @@ export class World
     return entities;
   }
 
-  getComponents(id : number, types : string[]) : any[]
+  getComponents(id : number, types : any[]) : any[]
   {
     let components : any[] = [];
     for (let type of types)
@@ -149,18 +150,18 @@ export class World
     return components;
   };
 
-  getOptionalComponents(id : number, types : string[]) : any[]
+  getOptionalComponents(id : number, types : any[]) : any[]
   {
     return types.map(type => this.getComponent(id, type));
   }
 
-  getSnapshot(types : string[]) : Map<string, ComponentStorage>
+  getSnapshot(types : any[]) : Map<any, ComponentStorage>
   {
-    const typeToKvPair = (type : string) : [string, ComponentStorage] => [ type, clone(this.componentData.get(type)) ];
-    return new Map<string, ComponentStorage>(types.map(typeToKvPair));
+    const typeToKvPair = (type : any) : [any, ComponentStorage] => [ type, clone(this.componentData.get(type)) ];
+    return new Map<any, ComponentStorage>(types.map(typeToKvPair));
   }
 
-  replaceSnapshot(snapshot : Map<string, ComponentStorage>) : void
+  replaceSnapshot(snapshot : Map<any, ComponentStorage>) : void
   {
     for (let [key, value] of snapshot.entries())
     {
@@ -168,7 +169,7 @@ export class World
     }
   }
 
-  private findSmallestComponentFromTypes(types : string[]) : ComponentStorage
+  private findSmallestComponentFromTypes(types : any[]) : ComponentStorage
   {
     let minSize : number = Number.POSITIVE_INFINITY;
     let minElement : ComponentStorage = null;
@@ -181,11 +182,11 @@ export class World
         minElement = data;
       }
     }
-    if (minElement === null)
-      console.log(types);
+    console.assert(minElement !== null, "Did not find any storage for ", types, " in ", this.componentData);
+
     return minElement;
   }
 
-  private componentData : Map<string, ComponentStorage>;
+  private componentData : Map<any, ComponentStorage>;
   private static EntityId : number = 0;
 };

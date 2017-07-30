@@ -16,10 +16,10 @@ export class RenderHealthBar implements RenderSystem
 
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Position.t, Damageable.t], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Damageable], (id : number, components : any[]) =>
     {
       let [position, damageable] = components as [Position, Damageable];
-      let selected = world.getComponent(id, Selected.t) as Selected;
+      let selected = world.getComponent(id, Selected) as Selected;
       if (!selected && damageable.hitpoints === damageable.maxHitpoints)
         return;
 

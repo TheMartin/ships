@@ -16,12 +16,12 @@ export class RenderAttackTarget implements RenderSystem
 
   update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Selected.t, AttackTarget.t], (id : number, components : any[]) =>
+    world.forEachEntity([Selected, AttackTarget], (id : number, components : any[]) =>
     {
       let [, attackTarget] = components as [Selected, AttackTarget];
       while (!world.containsEntity(attackTarget.target) && world.containsEntity(attackTarget.delegate))
       {
-        attackTarget = world.getComponent(attackTarget.delegate, AttackTarget.t) as AttackTarget;
+        attackTarget = world.getComponent(attackTarget.delegate, AttackTarget) as AttackTarget;
       }
 
       if (!world.containsEntity(attackTarget.target))
@@ -29,7 +29,7 @@ export class RenderAttackTarget implements RenderSystem
         return;
       }
 
-      let targetPosition = world.getComponent(attackTarget.target, Position.t) as Position;
+      let targetPosition = world.getComponent(attackTarget.target, Position) as Position;
       console.assert(targetPosition);
       let targetPos = this.spatialCache.interpolatePosition(targetPosition, attackTarget.target, interp);
 
@@ -37,18 +37,18 @@ export class RenderAttackTarget implements RenderSystem
       this.renderer.drawCircle(targetPos, 5, RenderAttackTarget.targetProps, this.viewport);
 
       let originPos : Vec2 = null;
-      let position = world.getComponent(id, Position.t) as Position;
+      let position = world.getComponent(id, Position) as Position;
       if (position)
       {
         originPos = this.spatialCache.interpolatePosition(position, id, interp);
       }
       else
       {
-        let squadron = world.getComponent(id, Squadron.t) as Squadron;
+        let squadron = world.getComponent(id, Squadron) as Squadron;
         if (squadron)
         {
           let flagship = squadron.flagship;
-          let position = world.getComponent(squadron.flagship, Position.t) as Position;
+          let position = world.getComponent(squadron.flagship, Position) as Position;
           if (position)
           {
             originPos = this.spatialCache.interpolatePosition(position, squadron.flagship, interp);

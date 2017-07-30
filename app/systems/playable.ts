@@ -35,6 +35,4 @@ export class Controlled implements NetworkComponent
   {
     return new Controlled(new Player(data[0] as PlayerType, data[1] as number));
   }
-
-  static readonly t : string = "Controlled";
 };

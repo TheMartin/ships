@@ -38,15 +38,13 @@ export class Damageable implements NetworkComponent
   }
 
   hitpoints : number;
-
-  static readonly t : string = "Damageable";
 };
 
 export class CheckDestroyed implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Damageable.t], (id : number, components : any[]) =>
+    world.forEachEntity([Damageable], (id : number, components : any[]) =>
     {
       let [damageable] = components as [Damageable];
       if (damageable.hitpoints < 0)
