@@ -50,6 +50,8 @@ import { Static } from "../data/static";
 
 import { shuffle } from "../util/shuffle";
 
+import { Loop } from "../util/loop";
+
 enum MessageType
 {
   ServerUpdate,
@@ -103,23 +105,16 @@ export class Game
 
     this.fps = fps;
     this.lastUpdate = performance.now();
-    this.lastDraw = performance.now();
 
-    let updateFn = () =>
+    let updateFn = (now : number, dt : number) =>
     {
-      setTimeout(updateFn, 1000 / this.fps);
-      const now = performance.now();
-      const dt = (now - this.lastUpdate) / 1000;
       this.lastUpdate = now;
       this.spatialCache.update(this.world);
       this.update(dt);
     };
 
-    let drawFn = (now : any) =>
+    let drawFn = (now : number, dt : number) =>
     {
-      requestAnimationFrame(drawFn);
-      const dt = (now - this.lastDraw) / 1000;
-      this.lastDraw = now;
       const interp = this.fps * (now - this.lastUpdate) / 1000;
       this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
@@ -127,8 +122,8 @@ export class Game
 
     this.setUpScenario();
 
-    setTimeout(updateFn, 1000 / this.fps);
-    requestAnimationFrame(drawFn);
+    Loop.timeout(updateFn, 1000 / this.fps);
+    Loop.render(drawFn);
   }
 
   startMultiplayerHost(fps : number, netTickRate : number, server : Network.Server) : void
@@ -142,23 +137,16 @@ export class Game
 
     this.fps = fps;
     this.lastUpdate = performance.now();
-    this.lastDraw = performance.now();
 
-    let updateFn = () =>
+    let updateFn = (now : number, dt : number) =>
     {
-      setTimeout(updateFn, 1000 / this.fps);
-      const now = performance.now();
-      const dt = (now - this.lastUpdate) / 1000;
       this.lastUpdate = now;
       this.spatialCache.update(this.world);
       this.update(dt);
     };
 
-    let drawFn = (now : any) =>
+    let drawFn = (now : number, dt : number) =>
     {
-      requestAnimationFrame(drawFn);
-      const dt = (now - this.lastDraw) / 1000;
-      this.lastDraw = now;
       const interp = this.fps * (now - this.lastUpdate) / 1000;
       this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
@@ -166,7 +154,6 @@ export class Game
 
     let sendUpdatesFn = () =>
     {
-      setTimeout(sendUpdatesFn, 1000 / netTickRate);
       const snapshot = this.world.getSnapshot(this.getNetworkComponentTypes());
       const oldSnapshot = snapshotHistory.length > 0 ? snapshotHistory[0].snapshot : dummySnapshot;
       const clientDelta = this.world.delta(oldSnapshot);
@@ -212,9 +199,9 @@ export class Game
 
     this.setUpScenario();
 
-    setTimeout(updateFn, 1000 / this.fps);
-    requestAnimationFrame(drawFn);
-    setTimeout(sendUpdatesFn, 1000 / netTickRate);
+    Loop.timeout(updateFn, 1000 / this.fps);
+    Loop.render(drawFn);
+    Loop.timeout(sendUpdatesFn, 1000 / netTickRate);
   }
 
   startMultiplayerClient(fps : number, netTickRate : number, client : Network.Client) : void
@@ -241,13 +228,9 @@ export class Game
 
     this.fps = fps;
     this.lastUpdate = performance.now();
-    this.lastDraw = performance.now();
 
-    let drawFn = (now : any) =>
+    let drawFn = (now : number, dt : number) =>
     {
-      requestAnimationFrame(drawFn);
-      const dt = (now - this.lastDraw) / 1000;
-      this.lastDraw = now;
       const interp = netTickRate * (now - this.lastUpdate) / 1000;
       this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
       this.draw(dt, interp);
@@ -255,7 +238,6 @@ export class Game
 
     let sendUpdatesFn = () =>
     {
-      setTimeout(sendUpdatesFn, 1000 / netTickRate);
       if (unsentEvents.length > 0)
       {
         const ack = clientAckCounter++;
@@ -299,8 +281,8 @@ export class Game
         messageHandlers[data.type](data);
     });
 
-    requestAnimationFrame(drawFn);
-    setTimeout(sendUpdatesFn, 1000 / netTickRate);
+    Loop.render(drawFn);
+    Loop.timeout(sendUpdatesFn, 1000 / netTickRate);
   }
 
   update(dt : number) : void
@@ -450,7 +432,6 @@ export class Game
   }
 
   private lastUpdate : number = 0;
-  private lastDraw : number = 0;
   private fps : number = 0;
   private componentMap : Map<string, Class> = null;
   private networkEventMap : Map<string, Class> = null;
