@@ -1,4 +1,4 @@
-import { World, ComponentStorage, delta, applyDelta, serialize, deserialize } from "../ecs/entities";
+import { World } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
@@ -136,7 +136,7 @@ export class Game
     this.setUpHostSystems();
 
     let dummySnapshot = this.makeEmptyNetworkSnapshot();
-    let snapshotHistory : { ack : number, snapshot : Map<Class, ComponentStorage> }[] = [];
+    let snapshotHistory : { ack : number, snapshot : World }[] = [];
     let serverAckCounter = 0;
     let clientAckCounter = -1;
 
@@ -169,12 +169,9 @@ export class Game
       setTimeout(sendUpdatesFn, 1000 / netTickRate);
       const snapshot = this.world.getSnapshot(this.getNetworkComponentTypes());
       const oldSnapshot = snapshotHistory.length > 0 ? snapshotHistory[0].snapshot : dummySnapshot;
-      const clientDelta = this.getNetworkComponentTypes().map((type : Class) : [Class, ComponentStorage] =>
-      {
-        return [type, delta(oldSnapshot.get(type), snapshot.get(type))];
-      });
+      const clientDelta = this.world.delta(oldSnapshot);
       const ack = serverAckCounter++;
-      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.map(([type, value] : [Class, ComponentStorage]) => { return [type.name, serialize(value)]; }) });
+      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.serialize() });
       snapshotHistory.push({ ack , snapshot });
     };
 
@@ -280,12 +277,7 @@ export class Game
         {
           this.lastUpdate = performance.now();
           this.spatialCache.update(this.world);
-          delta.forEach(([key, data] : [string, any[]]) : void =>
-          {
-            const type = this.componentMap.get(key) as any;
-            console.assert(type.deserialize !== undefined, "Unrecognized network component key : ", key);
-            applyDelta(snapshot.get(type), deserialize(data, type.deserialize));
-          });
+          snapshot.applyDelta(World.deserialize(delta, this.componentMap));
           this.world.replaceSnapshot(snapshot);
           inputHistory.map(item => item.events)
             .reduceRight((rhs, lhs) => lhs.concat(rhs), unsentEvents)
@@ -452,9 +444,9 @@ export class Game
     return Array.from(this.componentMap.values()).filter( (type : any) => type.deserialize !== undefined ) as Class[];
   }
 
-  private makeEmptyNetworkSnapshot() : Map<Class, ComponentStorage>
+  private makeEmptyNetworkSnapshot() : World
   {
-    return new Map<Class, ComponentStorage>( this.getNetworkComponentTypes().map((type : Class) : [Class, ComponentStorage] => { return [type, new Map<number, any>()]; } ) );
+    return new World(this.getNetworkComponentTypes());
   }
 
   private lastUpdate : number = 0;

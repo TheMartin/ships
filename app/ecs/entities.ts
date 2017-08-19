@@ -1,8 +1,8 @@
-export type ComponentStorage = Map<number, any>;
+type ComponentStorage = Map<number, any>;
 
 type ComponentClass = new (...args : any[]) => any;
 
-export function delta(lhs : ComponentStorage, rhs : ComponentStorage) : ComponentStorage
+function delta(lhs : ComponentStorage, rhs : ComponentStorage) : ComponentStorage
 {
   let result : ComponentStorage = new Map<number, any>();
   for (let [id, newComponent] of rhs.entries())
@@ -23,7 +23,7 @@ export function delta(lhs : ComponentStorage, rhs : ComponentStorage) : Componen
   return result;
 };
 
-export function applyDelta(components : ComponentStorage, delta : ComponentStorage) : void
+function applyDelta(components : ComponentStorage, delta : ComponentStorage) : void
 {
   for (let [id, newComponent] of delta.entries())
   {
@@ -38,7 +38,7 @@ export function applyDelta(components : ComponentStorage, delta : ComponentStora
   }
 };
 
-export function clone(components : ComponentStorage) : ComponentStorage
+function clone(components : ComponentStorage) : ComponentStorage
 {
   let clone : ComponentStorage = new Map<number, any>();
   for (let [id, component] of components.entries())
@@ -48,7 +48,7 @@ export function clone(components : ComponentStorage) : ComponentStorage
   return clone;
 };
 
-export function serialize(components : ComponentStorage) : any[]
+function serialize(components : ComponentStorage) : any[]
 {
   let result : any[] = [];
   for (let [id, component] of components.entries())
@@ -58,7 +58,7 @@ export function serialize(components : ComponentStorage) : any[]
   return result;
 };
 
-export function deserialize(data : any[], deserializer : (data : any[]) => any) : ComponentStorage
+function deserialize(data : any[], deserializer : (data : any[]) => any) : ComponentStorage
 {
   return new Map<number, any>( data.map((item) : [number, any[]] => [ (<any[]>item)[0] as number, (<any[]>item)[1] !== null ? deserializer( (<any[]>item)[1] as any[] ) : null]) );
 };
@@ -157,18 +157,73 @@ export class World
     return types.map(type => this.getComponent(id, type));
   }
 
-  getSnapshot(types : ComponentClass[]) : Map<ComponentClass, ComponentStorage>
+  getSnapshot(types : ComponentClass[]) : World
   {
-    const typeToKvPair = (type : ComponentClass) : [ComponentClass, ComponentStorage] => [ type, clone(this.componentData.get(type)) ];
-    return new Map<ComponentClass, ComponentStorage>(types.map(typeToKvPair));
+    let snapshot = new World(types);
+    for (let type of types)
+    {
+      let data = clone(this.componentData.get(type));
+      if (data)
+      {
+        snapshot.componentData.set(type, data);
+      }
+    }
+    return snapshot;
   }
 
-  replaceSnapshot(snapshot : Map<ComponentClass, ComponentStorage>) : void
+  replaceSnapshot(snapshot : World) : void
   {
-    for (let [key, value] of snapshot.entries())
+    for (let [key, value] of snapshot.componentData.entries())
     {
       this.componentData.set(key, clone(value));
     }
+  }
+
+  delta(oldSnapshot : World) : World
+  {
+    const types = Array.from(oldSnapshot.componentData.keys());
+    let worldDelta = new World(types);
+    for (let type of types)
+    {
+      if (this.componentData.has(type))
+      {
+        worldDelta.componentData.set(type, delta(oldSnapshot.componentData.get(type), this.componentData.get(type)));
+      }
+    }
+    return worldDelta;
+  }
+
+  applyDelta(delta : World) : void
+  {
+    const types = Array.from(this.componentData.keys());
+    console.assert(types.filter(type => !delta.componentData.has(type)).length === 0, "Component type mismatch in applying delta", types);
+    for (let type of types)
+    {
+      applyDelta(this.componentData.get(type), delta.componentData.get(type));
+    }
+  }
+
+  serialize() : any[]
+  {
+    let result : any[] = [];
+    for (let [type, data] of this.componentData.entries())
+    {
+      result.push([type.name, serialize(data)]);
+    }
+    return result;
+  }
+
+  static deserialize(data : any[], componentMap : Map<string, ComponentClass>) : World
+  {
+    const types = data.map(([key, data]) => key);
+    let world = new World([]);
+    for (let [key, value] of data)
+    {
+      let type = componentMap.get(key);
+      console.assert(type && (type as any).deserialize, "Unrecognized network component : " + key);
+      world.componentData.set(type, deserialize(value, (type as any).deserialize));
+    }
+    return world;
   }
 
   private findSmallestComponentFromTypes(types : ComponentClass[]) : ComponentStorage
