@@ -56,7 +56,7 @@ export class OrderFormUp implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager)
   {
-    inputQueue.setHandler(FormUpOrder, (evt : FormUpOrder, interp : number, world : World) =>
+    inputQueue.setHandler(FormUpOrder, (evt : FormUpOrder, now : number, world : World) =>
     {
       let entities = evt.entities.filter(e =>
       {
@@ -85,7 +85,7 @@ export class OrderFormUp implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     if (this.orderGiven)
     {

@@ -30,7 +30,7 @@ export class OrderMove implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager, viewport : Viewport)
   {
-    inputQueue.setHandler(MoveOrder, (evt : MoveOrder, interp : number, world : World) =>
+    inputQueue.setHandler(MoveOrder, (evt : MoveOrder, now : number, world : World) =>
     {
       if (!world.containsEntity(evt.entity))
         return;
@@ -49,7 +49,7 @@ export class OrderMove implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     for (let order of this.orderQueue)
     {

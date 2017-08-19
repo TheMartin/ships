@@ -31,7 +31,7 @@ export class OrderAttack implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager, viewport : Viewport)
   {
-    inputQueue.setHandler(AttackOrder, (evt : AttackOrder, interp : number, world : World) =>
+    inputQueue.setHandler(AttackOrder, (evt : AttackOrder, now : number, world : World) =>
     {
       if (!world.containsEntity(evt.entity) || !world.containsEntity(evt.target))
         return;
@@ -48,7 +48,7 @@ export class OrderAttack implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     for (let order of this.orderQueue)
     {

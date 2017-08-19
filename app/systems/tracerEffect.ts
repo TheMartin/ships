@@ -36,13 +36,13 @@ export class RenderTracer implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     world.forEachEntity([Position, Velocity, TracerEffect], (id : number, components : any[]) =>
     {
       let [position, velocity,] = components as [Position, Velocity, TracerEffect];
 
-      const pos = this.spatialCache.interpolatePosition(position, id, interp);
+      const pos = this.spatialCache.interpolatePosition(position, id, now);
       const end = pos.clone().add(velocity.vel.clone().multiply(1/60));
       this.renderer.drawLine(pos, end, RenderTracer.tracerProps, this.viewport);
     });

@@ -4,7 +4,7 @@ export interface UserEvent
 {
 };
 
-export type UserEventHandler = (e : UserEvent, interp : number, world : World) => void;
+export type UserEventHandler = (e : UserEvent, now : number, world : World) => void;
 
 type EventClass = new (...args : any[]) => any;
 
@@ -25,12 +25,12 @@ export class UserInputQueue
     this.handlers.set(type.name, handler);
   }
 
-  flush(interp : number, world : World) : void
+  flush(now : number, world : World) : void
   {
     for (let e of this.queue)
     {
       if (this.handlers.has(e.constructor.name))
-        this.handlers.get(e.constructor.name)(e, interp, world);
+        this.handlers.get(e.constructor.name)(e, now, world);
     }
 
     this.queue = [];

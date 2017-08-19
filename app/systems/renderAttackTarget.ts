@@ -14,7 +14,7 @@ export class RenderAttackTarget implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     world.forEachEntity([Selected, AttackTarget], (id : number, components : any[]) =>
     {
@@ -31,7 +31,7 @@ export class RenderAttackTarget implements RenderSystem
 
       let targetPosition = world.getComponent(attackTarget.target, Position) as Position;
       console.assert(targetPosition);
-      let targetPos = this.spatialCache.interpolatePosition(targetPosition, attackTarget.target, interp);
+      let targetPos = this.spatialCache.interpolatePosition(targetPosition, attackTarget.target, now);
 
       this.renderer.drawCircle(targetPos, 10, RenderAttackTarget.targetProps, this.viewport);
       this.renderer.drawCircle(targetPos, 5, RenderAttackTarget.targetProps, this.viewport);
@@ -40,7 +40,7 @@ export class RenderAttackTarget implements RenderSystem
       let position = world.getComponent(id, Position) as Position;
       if (position)
       {
-        originPos = this.spatialCache.interpolatePosition(position, id, interp);
+        originPos = this.spatialCache.interpolatePosition(position, id, now);
       }
       else
       {
@@ -51,7 +51,7 @@ export class RenderAttackTarget implements RenderSystem
           let position = world.getComponent(squadron.flagship, Position) as Position;
           if (position)
           {
-            originPos = this.spatialCache.interpolatePosition(position, squadron.flagship, interp);
+            originPos = this.spatialCache.interpolatePosition(position, squadron.flagship, now);
           }
         }
       }

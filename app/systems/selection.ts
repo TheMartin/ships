@@ -87,7 +87,7 @@ export class SelectionSystem implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private spatialCache : SpatialCache, player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
-    inputQueue.setHandler(SelectSingle, (evt : SelectSingle, interp : number, world : World) =>
+    inputQueue.setHandler(SelectSingle, (evt : SelectSingle, now : number, world : World) =>
     {
       unselectAll(world);
 
@@ -102,12 +102,12 @@ export class SelectionSystem implements RenderSystem
       }
     });
 
-    inputQueue.setHandler(Unselect, (evt : Unselect, interp : number, world : World) =>
+    inputQueue.setHandler(Unselect, (evt : Unselect, now : number, world : World) =>
     {
       unselectAll(world);
     });
 
-    inputQueue.setHandler(SelectBox, (evt : SelectBox, interp : number, world : World) =>
+    inputQueue.setHandler(SelectBox, (evt : SelectBox, now : number, world : World) =>
     {
       unselectAll(world);
 
@@ -117,7 +117,7 @@ export class SelectionSystem implements RenderSystem
         if (controlled.player.id !== player.id)
           return;
 
-        if (isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, id, interp)), evt.box))
+        if (isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, id, now)), evt.box))
         {
           world.addComponent(selectable.target, new Selected());
         }
@@ -153,7 +153,7 @@ export class SelectionSystem implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     if (this.dragStart)
     {
@@ -180,7 +180,7 @@ export class DrawSelectedBox implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     let selected = world.findEntities([Selected]);
     let selectedSquadrons = selected.filter(id => world.getComponent(id, Squadron) !== null);
@@ -193,7 +193,7 @@ export class DrawSelectedBox implements RenderSystem
     let boxPositions = selectBoxes.concat(selectedShips)
       .map(id => [id, world.getComponent(id, Position)])
       .filter(([id, position]) => position !== null)
-      .map(([id, position]) => this.spatialCache.interpolatePosition(position, id, interp));
+      .map(([id, position]) => this.spatialCache.interpolatePosition(position, id, now));
 
     const size = new Vec2(10, 10).multiply(this.viewport.scale);
     for (let box of boxPositions)

@@ -23,14 +23,14 @@ function positionToString(pos : Vec2) : string
   return pos.x.toFixed() + " : " + pos.y.toFixed();
 };
 
-function spatialInformation(position : Position, rotation : Rotation, spatialCache : SpatialCache, id : number, interp : number, velocity : Velocity) : string
+function spatialInformation(position : Position, rotation : Rotation, spatialCache : SpatialCache, id : number, now : number, velocity : Velocity) : string
 {
   let msgParts : string[] = [];
   if (position)
-    msgParts.push(positionToString(spatialCache.interpolatePosition(position, id, interp)));
+    msgParts.push(positionToString(spatialCache.interpolatePosition(position, id, now)));
 
   if (rotation)
-    msgParts.push((180 * wrapAngle(spatialCache.interpolateRotation(rotation, id, interp)) / Math.PI).toFixed() + "°");
+    msgParts.push((180 * wrapAngle(spatialCache.interpolateRotation(rotation, id, now)) / Math.PI).toFixed() + "°");
 
   if (velocity)
     msgParts.push(norm(velocity.vel).toFixed());
@@ -61,7 +61,7 @@ function renderAttackTarget(attackTarget : AttackTarget, world : World) : VdomEl
     : null;
 }
 
-function renderShip(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
+function renderShip(id : number, world : World, spatialCache : SpatialCache, now : number) : VdomElement
 {
   let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = world.getOptionalComponents(id,
     [Named, Position, Rotation, Velocity, MoveToTarget, AttackTarget, Damageable]
@@ -78,7 +78,7 @@ function renderShip(id : number, world : World, spatialCache : SpatialCache, int
       : null,
 
     position || rotation || velocity
-      ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, rotation, spatialCache, id, interp, velocity))
+      ? VdomElement.create("span", {"class" : "pos"}, spatialInformation(position, rotation, spatialCache, id, now, velocity))
       : null,
 
     renderMoveTarget(moveTarget),
@@ -87,7 +87,7 @@ function renderShip(id : number, world : World, spatialCache : SpatialCache, int
   );
 };
 
-function renderSquadron(id : number, world : World, spatialCache : SpatialCache, interp : number) : VdomElement
+function renderSquadron(id : number, world : World, spatialCache : SpatialCache, now : number) : VdomElement
 {
   let [name, squadron, moveTarget, attackTarget] = world.getOptionalComponents(id, [Named, Squadron, MoveToTarget, AttackTarget]) as [Named, Squadron, MoveToTarget, AttackTarget];
   const squadronId = id;
@@ -108,7 +108,7 @@ function renderSquadron(id : number, world : World, spatialCache : SpatialCache,
 
     renderAttackTarget(attackTarget, world),
 
-    VdomElement.create("div", {"class" : "members"}, ...squadronMembers.map(id => renderShip(id, world, spatialCache, interp)) )
+    VdomElement.create("div", {"class" : "members"}, ...squadronMembers.map(id => renderShip(id, world, spatialCache, now)) )
   );
 };
 
@@ -120,15 +120,15 @@ export class StatusWindow implements RenderSystem
     this.$elem = createElement(this.elem) as HTMLElement;
   }
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     let elem = VdomElement.create("div", {"class" : "window"});
     world.forEachEntity([Selected], (id : number, components : any[]) =>
     {
       elem.children.push(
         world.getComponent(id, Squadron)
-        ? renderSquadron(id, world, this.spatialCache, interp)
-        : renderShip(id, world, this.spatialCache, interp)
+        ? renderSquadron(id, world, this.spatialCache, now)
+        : renderShip(id, world, this.spatialCache, now)
       );
     });
 

@@ -35,7 +35,7 @@ export class ViewportController implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     const mousePos = this.ui.mousePosition();
     if (!mousePos)

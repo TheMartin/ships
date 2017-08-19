@@ -14,7 +14,7 @@ export class RenderHealthBar implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     world.forEachEntity([Position, Damageable], (id : number, components : any[]) =>
     {
@@ -24,7 +24,7 @@ export class RenderHealthBar implements RenderSystem
         return;
 
       const ratio = clamp(damageable.hitpoints / damageable.maxHitpoints, 0, 1);
-      let pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, id, interp)).add(RenderHealthBar.offset);
+      let pos = this.viewport.transform(this.spatialCache.interpolatePosition(position, id, now)).add(RenderHealthBar.offset);
 
       this.renderer.drawRect(pos, RenderHealthBar.size.clone().elementMultiply(new Vec2(ratio, 1)).add(pos), RenderHealthBar.greenBarProps);
       this.renderer.drawRect(RenderHealthBar.size.clone().elementMultiply(new Vec2(ratio, 0)).add(pos), pos.add(RenderHealthBar.size), RenderHealthBar.redBarProps);

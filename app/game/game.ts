@@ -101,56 +101,26 @@ export class Game
 
   startSingleplayer(fps : number) : void
   {
+    let updateStep = 1000 / fps;
+
     this.setUpSingleplayerSystems();
-
-    this.fps = fps;
-    this.lastUpdate = performance.now();
-
-    let updateFn = (now : number, dt : number) =>
-    {
-      this.lastUpdate = now;
-      this.spatialCache.update(this.world);
-      this.update(dt);
-    };
-
-    let drawFn = (now : number, dt : number) =>
-    {
-      const interp = this.fps * (now - this.lastUpdate) / 1000;
-      this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
-      this.draw(dt, interp);
-    };
-
     this.setUpScenario();
 
-    Loop.timeout(updateFn, 1000 / this.fps);
-    Loop.render(drawFn);
+    Loop.timeout((now, dt) => this.update(now, dt, updateStep), updateStep);
+    Loop.render((now, dt) => this.draw(now, dt));
   }
 
   startMultiplayerHost(fps : number, netTickRate : number, server : Network.Server) : void
   {
+    let updateStep = 1000 / fps;
+    let serverStep = 1000 / netTickRate;
+
     this.setUpHostSystems();
 
     let dummySnapshot = this.makeEmptyNetworkSnapshot();
     let snapshotHistory : { ack : number, snapshot : World }[] = [];
     let serverAckCounter = 0;
     let clientAckCounter = -1;
-
-    this.fps = fps;
-    this.lastUpdate = performance.now();
-
-    let updateFn = (now : number, dt : number) =>
-    {
-      this.lastUpdate = now;
-      this.spatialCache.update(this.world);
-      this.update(dt);
-    };
-
-    let drawFn = (now : number, dt : number) =>
-    {
-      const interp = this.fps * (now - this.lastUpdate) / 1000;
-      this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
-      this.draw(dt, interp);
-    };
 
     let sendUpdatesFn = () =>
     {
@@ -199,13 +169,15 @@ export class Game
 
     this.setUpScenario();
 
-    Loop.timeout(updateFn, 1000 / this.fps);
-    Loop.render(drawFn);
-    Loop.timeout(sendUpdatesFn, 1000 / netTickRate);
+    Loop.timeout((now, dt) => this.update(now, dt, updateStep), updateStep);
+    Loop.render((now, dt) => this.draw(now, dt));
+    Loop.timeout(sendUpdatesFn, serverStep);
   }
 
   startMultiplayerClient(fps : number, netTickRate : number, client : Network.Client) : void
   {
+    let clientStep = 1000 / netTickRate;
+
     this.setUpClientSystems();
 
     let snapshot = this.makeEmptyNetworkSnapshot();
@@ -219,24 +191,14 @@ export class Game
     {
       let handler = this.inputQueue.getHandler(type);
       handlers.set(name, handler);
-      this.inputQueue.setHandler(type, (e : UserEvent, interp : number, world : World) =>
+      this.inputQueue.setHandler(type, (e : UserEvent, now : number, world : World) =>
       {
-        handler(e, interp, world);
+        handler(e, now, world);
         unsentEvents.push(e as NetworkUserEvent);
       });
     }
 
-    this.fps = fps;
-    this.lastUpdate = performance.now();
-
-    let drawFn = (now : number, dt : number) =>
-    {
-      const interp = netTickRate * (now - this.lastUpdate) / 1000;
-      this.ui.updateClickables(this.world, this.spatialCache, interp, this.viewport);
-      this.draw(dt, interp);
-    };
-
-    let sendUpdatesFn = () =>
+    let sendEventsFn = () =>
     {
       if (unsentEvents.length > 0)
       {
@@ -257,8 +219,7 @@ export class Game
         let { ack, delta } = data;
         if (ack > serverAckCounter)
         {
-          this.lastUpdate = performance.now();
-          this.spatialCache.update(this.world);
+          this.spatialCache.update(this.world, performance.now(), clientStep);
           snapshot.applyDelta(World.deserialize(delta, this.componentMap));
           this.world.replaceSnapshot(snapshot);
           inputHistory.map(item => item.events)
@@ -281,12 +242,13 @@ export class Game
         messageHandlers[data.type](data);
     });
 
-    Loop.render(drawFn);
-    Loop.timeout(sendUpdatesFn, 1000 / netTickRate);
+    Loop.render((now, dt) => this.draw(now, dt));
+    Loop.timeout(sendEventsFn, clientStep);
   }
 
-  update(dt : number) : void
+  update(now : number, dt : number, step : number) : void
   {
+    this.spatialCache.update(this.world, now, step);
     let deferred = new Deferred();
     for (let system of this.updateSystems)
     {
@@ -295,17 +257,18 @@ export class Game
     deferred.flush(this.world);
   }
 
-  draw(dt : number, interp : number) : void
+  draw(now : number, dt : number) : void
   {
+    this.ui.updateClickables(this.world, this.spatialCache, now, this.viewport);
     this.renderer.clear();
     let deferred = new Deferred();
 
     for (let system of this.renderSystems)
     {
-      system.update(dt, interp, this.world, this.inputQueue, deferred);
+      system.update(now, dt, this.world, this.inputQueue, deferred);
     }
     deferred.flush(this.world);
-    this.inputQueue.flush(interp, this.world);
+    this.inputQueue.flush(now, this.world);
   }
 
   private setUpScenario() : void
@@ -431,8 +394,6 @@ export class Game
     return new World(this.getNetworkComponentTypes());
   }
 
-  private lastUpdate : number = 0;
-  private fps : number = 0;
   private componentMap : Map<string, Class> = null;
   private networkEventMap : Map<string, Class> = null;
   private world : World = null;

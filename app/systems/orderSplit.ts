@@ -31,7 +31,7 @@ export class OrderSplit implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager)
   {
-    inputQueue.setHandler(SplitOrder, (evt : SplitOrder, interp : number, world : World) =>
+    inputQueue.setHandler(SplitOrder, (evt : SplitOrder, now : number, world : World) =>
     {
       const squadron = evt.squadron;
       let entities = world.findEntities([SquadronMember], (id : number, components : any[]) =>
@@ -64,7 +64,7 @@ export class OrderSplit implements RenderSystem
     });
   }
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     if (this.orderGiven)
     {

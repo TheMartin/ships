@@ -193,7 +193,7 @@ export class UiManager
     return this.mousePos;
   }
 
-  updateClickables(world : World, spatialCache : SpatialCache, interp : number, viewport : Viewport) : void
+  updateClickables(world : World, spatialCache : SpatialCache, now : number, viewport : Viewport) : void
   {
     this.clickables = {};
     world.forEachEntity([Position], (id : number, components : any[]) =>
@@ -201,7 +201,7 @@ export class UiManager
       let [position] = components as [Position];
       if (world.getComponent(id, Selectable) || world.getComponent(id, Targetable))
       {
-        let pos = viewport.transform(spatialCache.interpolatePosition(position, id, interp));
+        let pos = viewport.transform(spatialCache.interpolatePosition(position, id, now));
         this.clickables[id] = new Clickable(id, pos, 15);
       }
     });

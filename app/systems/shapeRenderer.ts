@@ -40,7 +40,7 @@ export class ShapeRenderer implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(dt : number, interp : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     world.forEachEntity([RenderShape, Position], (id : number, components : any[]) =>
     {
@@ -48,8 +48,8 @@ export class ShapeRenderer implements RenderSystem
       let rotation = world.getComponent(id, Rotation) as Rotation;
 
       this.renderer.drawShape(shape.shape,
-        this.spatialCache.interpolatePosition(position, id, interp),
-        rotation ? this.spatialCache.interpolateRotation(rotation, id, interp) : 0,
+        this.spatialCache.interpolatePosition(position, id, now),
+        rotation ? this.spatialCache.interpolateRotation(rotation, id, now) : 0,
         1,
         this.viewport
       );
