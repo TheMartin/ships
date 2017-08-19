@@ -4,3 +4,8 @@ export interface NetworkComponent
   clone() : NetworkComponent;
   serialize() : any[];
 };
+
+export function isNetworkComponentType(type : any) : boolean
+{
+  return type.deserialize !== undefined;
+}

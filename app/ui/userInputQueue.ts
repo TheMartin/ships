@@ -36,6 +36,11 @@ export class UserInputQueue
     this.queue = [];
   }
 
+  isEmpty() : boolean
+  {
+    return this.queue.length === 0;
+  }
+
   private handlers : Map<string, UserEventHandler> = new Map<string, UserEventHandler>();
   private queue : UserEvent[] = [];
 };

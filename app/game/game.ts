@@ -39,12 +39,13 @@ import { TracerEffect } from "../systems/tracerEffect";
 import { Projectile } from "../systems/projectile";
 
 import { UiManager } from "../ui/uiManager";
-import { UserInputQueue, UserEvent, UserEventHandler } from "../ui/userInputQueue";
-import { NetworkUserEvent } from "../network/networkUserEvent";
+import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, Viewport } from "../renderer/renderer";
-import { Vec2, lerp } from "../vec2/vec2";
+import { Vec2 } from "../vec2/vec2";
 
 import * as Network from "../network/network";
+import { Host } from "../network/host";
+import { Client } from "../network/client";
 
 import { Static } from "../data/static";
 
@@ -52,51 +53,47 @@ import { shuffle } from "../util/shuffle";
 
 import { Loop } from "../util/loop";
 
-enum MessageType
-{
-  ServerUpdate,
-  ServerUpdateAck,
-  ClientUpdate,
-  ClientUpdateAck
-};
-
 type Class = new (...args : any[]) => any;
+
+function makeConstructorNameMap(ctors : Class[]) : Map<string, Class>
+{
+  return new Map<string, Class>(ctors.map( (type : Class) : [string, Class] => [type.name, type] ));
+}
 
 export class Game
 {
+  static componentTypes : Class[] = [
+    Position,
+    Rotation,
+    Velocity,
+    AngularVelocity,
+    RenderShape,
+    MoveToTarget,
+    Selectable,
+    Selected,
+    Named,
+    Controlled,
+    Targetable,
+    AttackTarget,
+    Armed,
+    Damageable,
+    TracerEffect,
+    Projectile,
+    Squadron,
+    SquadronMember
+  ];
+
+  static eventTypes : Class[] = [
+    AttackOrder,
+    MoveOrder,
+    FormUpOrder,
+    SplitOrder
+  ];
+
   constructor(private ui : UiManager, private renderer : Renderer)
   {
     this.players = [new Player(PlayerType.Local, 0), new Player(PlayerType.Ai, 1)];
     this.viewport = new Viewport(new Vec2(0, 0), 0, 1);
-    let componentTypes = [
-      Position,
-      Rotation,
-      Velocity,
-      AngularVelocity,
-      RenderShape,
-      MoveToTarget,
-      Selectable,
-      Selected,
-      Named,
-      Controlled,
-      Targetable,
-      AttackTarget,
-      Armed,
-      Damageable,
-      TracerEffect,
-      Projectile,
-      Squadron,
-      SquadronMember
-    ];
-    this.componentMap = new Map<string, Class>(componentTypes.map( (type : Class) : [string, Class] => [type.name, type] ));
-    let eventTypes = [
-      AttackOrder,
-      MoveOrder,
-      FormUpOrder,
-      SplitOrder
-    ];
-    this.networkEventMap = new Map<string, Class>(eventTypes.map( (type : Class) : [string, Class] => [type.name, type] ));
-    this.world = new World(componentTypes);
   }
 
   startSingleplayer(fps : number) : void
@@ -112,66 +109,16 @@ export class Game
 
   startMultiplayerHost(fps : number, netTickRate : number, server : Network.Server) : void
   {
-    let updateStep = 1000 / fps;
-    let serverStep = 1000 / netTickRate;
-
     this.setUpHostSystems();
 
-    let dummySnapshot = this.makeEmptyNetworkSnapshot();
-    let snapshotHistory : { ack : number, snapshot : World }[] = [];
-    let serverAckCounter = 0;
-    let clientAckCounter = -1;
-
-    let sendUpdatesFn = () =>
-    {
-      const snapshot = this.world.getSnapshot(this.getNetworkComponentTypes());
-      const oldSnapshot = snapshotHistory.length > 0 ? snapshotHistory[0].snapshot : dummySnapshot;
-      const clientDelta = this.world.delta(oldSnapshot);
-      const ack = serverAckCounter++;
-      server.send({ type : MessageType.ServerUpdate, ack, delta : clientDelta.serialize() });
-      snapshotHistory.push({ ack , snapshot });
-    };
-
-    let messageHandlers = {
-      [MessageType.ClientUpdate] : (data : any) =>
-      {
-        const { ack, history } = data;
-        if (ack > clientAckCounter)
-        {
-          for (let item of history)
-          {
-            if (item.ack > clientAckCounter)
-            {
-              item.events.forEach(([name, ...data] : [string, any[]]) =>
-              {
-                const type = this.networkEventMap.get(name) as any;
-                console.assert(type.deserialize !== undefined, "Unrecognized network event key : ", name);
-                this.inputQueue.enqueue(type.deserialize(data));
-              });
-            }
-          }
-          clientAckCounter = ack;
-        }
-        server.send({ type : MessageType.ClientUpdateAck, ack });
-      },
-      [MessageType.ServerUpdateAck] : (data : any) =>
-      {
-        const ack = data.ack;
-        snapshotHistory = snapshotHistory.filter(item => item.ack >= ack);
-      }
-    };
-
-    server.onData((data : any) =>
-    {
-      if (data.type in messageHandlers)
-        messageHandlers[data.type](data);
-    });
+    let host = new Host(server, this.componentMap, this.networkEventMap, this.inputQueue);
 
     this.setUpScenario();
 
+    let updateStep = 1000 / fps;
     Loop.timeout((now, dt) => this.update(now, dt, updateStep), updateStep);
     Loop.render((now, dt) => this.draw(now, dt));
-    Loop.timeout(sendUpdatesFn, serverStep);
+    Loop.timeout(() => host.update(this.world), 1000 / netTickRate);
   }
 
   startMultiplayerClient(fps : number, netTickRate : number, client : Network.Client) : void
@@ -180,70 +127,16 @@ export class Game
 
     this.setUpClientSystems();
 
-    let snapshot = this.makeEmptyNetworkSnapshot();
-    let inputHistory : { ack : number, events : NetworkUserEvent[] }[] = [];
-    let serverAckCounter = -1;
-    let clientAckCounter = 0;
-
-    let unsentEvents : NetworkUserEvent[] = [];
-    let handlers = new Map<string, UserEventHandler>();
-    for (let [name, type] of this.networkEventMap.entries())
+    let gameClient = new Client(client, this.componentMap, this.networkEventMap, this.inputQueue, (snapshot : World, pendingInputs : UserInputQueue) =>
     {
-      let handler = this.inputQueue.getHandler(type);
-      handlers.set(name, handler);
-      this.inputQueue.setHandler(type, (e : UserEvent, now : number, world : World) =>
-      {
-        handler(e, now, world);
-        unsentEvents.push(e as NetworkUserEvent);
-      });
-    }
-
-    let sendEventsFn = () =>
-    {
-      if (unsentEvents.length > 0)
-      {
-        const ack = clientAckCounter++;
-        inputHistory.push({ ack, events : unsentEvents });
-        unsentEvents = [];
-        let history = inputHistory.map((item : {ack : number, events : NetworkUserEvent[]}) : {ack : number, events : any[]} =>
-        {
-          return { ack : item.ack, events : item.events.map(e => [e.constructor.name, ...e.serialize()]) };
-        });
-        client.send({ type : MessageType.ClientUpdate, ack, history });
-      }
-    };
-
-    let messageHandlers = {
-      [MessageType.ServerUpdate] : (data : any) =>
-      {
-        let { ack, delta } = data;
-        if (ack > serverAckCounter)
-        {
-          this.spatialCache.update(this.world, performance.now(), clientStep);
-          snapshot.applyDelta(World.deserialize(delta, this.componentMap));
-          this.world.replaceSnapshot(snapshot);
-          inputHistory.map(item => item.events)
-            .reduceRight((rhs, lhs) => lhs.concat(rhs), unsentEvents)
-            .forEach(e => handlers.get(e.constructor.name)(e, 0, this.world));
-          serverAckCounter = ack;
-        }
-        client.send({ type : MessageType.ServerUpdateAck, ack });
-      },
-      [MessageType.ClientUpdateAck] : (data : any) =>
-      {
-        let { ack } = data;
-        inputHistory = inputHistory.filter(item => item.ack > ack);
-      }
-    };
-
-    client.onData((data : any) =>
-    {
-      if (data.type in messageHandlers)
-        messageHandlers[data.type](data);
+      const now = performance.now();
+      this.spatialCache.update(this.world, now, clientStep);
+      this.world.replaceSnapshot(snapshot);
+      pendingInputs.flush(now, this.world);
     });
 
     Loop.render((now, dt) => this.draw(now, dt));
-    Loop.timeout(sendEventsFn, clientStep);
+    Loop.timeout(() => gameClient.sendEvents(), clientStep);
   }
 
   update(now : number, dt : number, step : number) : void
@@ -384,19 +277,9 @@ export class Game
     ];
   }
 
-  private getNetworkComponentTypes() : Class[]
-  {
-    return Array.from(this.componentMap.values()).filter( (type : any) => type.deserialize !== undefined ) as Class[];
-  }
-
-  private makeEmptyNetworkSnapshot() : World
-  {
-    return new World(this.getNetworkComponentTypes());
-  }
-
-  private componentMap : Map<string, Class> = null;
-  private networkEventMap : Map<string, Class> = null;
-  private world : World = null;
+  private componentMap : Map<string, Class> = makeConstructorNameMap(Game.componentTypes);
+  private networkEventMap : Map<string, Class> = makeConstructorNameMap(Game.eventTypes);
+  private world : World = new World(Game.componentTypes);
   private spatialCache : SpatialCache = new SpatialCache();
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];
