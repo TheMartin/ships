@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -16,7 +16,7 @@ export class RenderMoveTarget implements RenderSystem
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Selected, MoveToTarget], (id : number, components : any[]) =>
+    world.forEachEntity([Selected, MoveToTarget], (id : Entity, components : any[]) =>
     {
       let [, moveTarget] = components as [Selected, MoveToTarget];
       if (moveTarget.order.kind !== "MoveTo")

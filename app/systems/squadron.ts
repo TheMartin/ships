@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { NetworkComponent } from "../network/networkComponent";
@@ -11,7 +11,7 @@ import { clamp } from "../util/clamp";
 
 export class Squadron implements NetworkComponent
 {
-  constructor(public flagship : number) {}
+  constructor(public flagship : Entity) {}
 
   equal(other : Squadron) : boolean
   {
@@ -30,13 +30,13 @@ export class Squadron implements NetworkComponent
 
   static deserialize(data : any[]) : Squadron
   {
-    return new Squadron(data[0] as number);
+    return new Squadron(data[0] as Entity);
   }
 };
 
 export class SquadronMember implements NetworkComponent
 {
-  constructor(public squadron : number, public offset : Vec2) {}
+  constructor(public squadron : Entity, public offset : Vec2) {}
 
   equal(other : SquadronMember) : boolean
   {
@@ -56,7 +56,7 @@ export class SquadronMember implements NetworkComponent
 
   static deserialize(data : any[]) : SquadronMember
   {
-    return new SquadronMember(data[0] as number, data[1] ? new Vec2(data[1] as number, data[2] as number) : null);
+    return new SquadronMember(data[0] as Entity, data[1] ? new Vec2(data[1] as number, data[2] as number) : null);
   }
 };
 
@@ -64,13 +64,13 @@ export class CheckSquadronIntegrity implements System
 {
   update(dt : number, world : World, deferred : Deferred)
   {
-    world.forEachEntity([Squadron], (id : number, components : any[]) =>
+    world.forEachEntity([Squadron], (id : Entity, components : any[]) =>
     {
       let [squadron] = components as [Squadron];
       let squadronId = id;
       if (!world.containsEntity(squadron.flagship))
       {
-        let members = world.findEntities([SquadronMember], (id : number, components : any[]) =>
+        let members = world.findEntities([SquadronMember], (id : Entity, components : any[]) =>
         {
           let [member] = components as [SquadronMember];
           return member.squadron == squadronId;
@@ -104,7 +104,7 @@ export class SquadronMovement implements System
 
   update(dt : number, world : World, deferred : Deferred)
   {
-    world.forEachEntity([Position, Rotation, Velocity, AngularVelocity, SquadronMember], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Rotation, Velocity, AngularVelocity, SquadronMember], (id : Entity, components : any[]) =>
     {
       let [position, rotation, velocity, angularVelocity, squadronMember] = components as [Position, Rotation, Velocity, AngularVelocity, SquadronMember];
       let [squadron, squadronTarget] = world.getComponents(squadronMember.squadron, [Squadron, MoveToTarget]) as [Squadron, MoveToTarget];

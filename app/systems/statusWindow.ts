@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager } from "../ui/uiManager";
@@ -23,7 +23,7 @@ function positionToString(pos : Vec2) : string
   return pos.x.toFixed() + " : " + pos.y.toFixed();
 };
 
-function spatialInformation(position : Position, rotation : Rotation, spatialCache : SpatialCache, id : number, now : number, velocity : Velocity) : string
+function spatialInformation(position : Position, rotation : Rotation, spatialCache : SpatialCache, id : Entity, now : number, velocity : Velocity) : string
 {
   let msgParts : string[] = [];
   if (position)
@@ -38,7 +38,7 @@ function spatialInformation(position : Position, rotation : Rotation, spatialCac
   return msgParts.join(" | ");
 };
 
-function entityName(world : World, id : number) : string
+function entityName(world : World, id : Entity) : string
 {
   if (!world.containsEntity(id))
     return null;
@@ -61,7 +61,7 @@ function renderAttackTarget(attackTarget : AttackTarget, world : World) : VdomEl
     : null;
 }
 
-function renderShip(id : number, world : World, spatialCache : SpatialCache, now : number) : VdomElement
+function renderShip(id : Entity, world : World, spatialCache : SpatialCache, now : number) : VdomElement
 {
   let [name, position, rotation, velocity, moveTarget, attackTarget, damageable] = world.getOptionalComponents(id,
     [Named, Position, Rotation, Velocity, MoveToTarget, AttackTarget, Damageable]
@@ -87,12 +87,12 @@ function renderShip(id : number, world : World, spatialCache : SpatialCache, now
   );
 };
 
-function renderSquadron(id : number, world : World, spatialCache : SpatialCache, now : number) : VdomElement
+function renderSquadron(id : Entity, world : World, spatialCache : SpatialCache, now : number) : VdomElement
 {
   let [name, squadron, moveTarget, attackTarget] = world.getOptionalComponents(id, [Named, Squadron, MoveToTarget, AttackTarget]) as [Named, Squadron, MoveToTarget, AttackTarget];
   const squadronId = id;
   const flagship = squadron.flagship;
-  const squadronMembers = world.findEntities([SquadronMember], (id : number, components : any[]) =>
+  const squadronMembers = world.findEntities([SquadronMember], (id : Entity, components : any[]) =>
   {
     let [member] = components as [SquadronMember];
     return member.squadron === squadronId;
@@ -123,7 +123,7 @@ export class StatusWindow implements RenderSystem
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
     let elem = VdomElement.create("div", {"class" : "window"});
-    world.forEachEntity([Selected], (id : number, components : any[]) =>
+    world.forEachEntity([Selected], (id : Entity, components : any[]) =>
     {
       elem.children.push(
         world.getComponent(id, Squadron)

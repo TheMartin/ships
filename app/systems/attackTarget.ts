@@ -1,3 +1,4 @@
+import { Entity } from "../ecs/entities";
 import { NetworkComponent } from "../network/networkComponent";
 
 export class Targetable implements NetworkComponent
@@ -42,10 +43,10 @@ export class AttackTarget implements NetworkComponent
 
   static deserialize(data : any[]) : AttackTarget
   {
-    return AttackTarget.Make(data[0] as number, data[1] as number);
+    return AttackTarget.Make(data[0] as Entity, data[1] as Entity);
   }
 
-  private static Make(target : number, delegate : number) : AttackTarget
+  private static Make(target : Entity, delegate : Entity) : AttackTarget
   {
     let tgt = new AttackTarget();
     tgt.target = target;
@@ -53,6 +54,6 @@ export class AttackTarget implements NetworkComponent
     return tgt;
   }
 
-  target : number = null;
-  delegate : number = null;
+  target : Entity = null;
+  delegate : Entity = null;
 };

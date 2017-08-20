@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { NetworkComponent } from "../network/networkComponent";
@@ -23,11 +23,11 @@ export class MoveTo
 
 export class Join
 {
-  constructor(public squadron : number) {}
+  constructor(public squadron : Entity) {}
   equal(other : Join) : boolean { return this.squadron === other.squadron; }
   clone() : Join { return new Join(this.squadron); }
   serialize() : any[] { return [ this.squadron ]; }
-  static deserialize(data : any[]) { return new Join(data[0] as number); }
+  static deserialize(data : any[]) { return new Join(data[0] as Entity); }
   kind : "Join" = "Join";
 };
 
@@ -108,7 +108,7 @@ export class UpdateMovement implements System
 
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position, Rotation, Velocity, AngularVelocity, MoveToTarget], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Rotation, Velocity, AngularVelocity, MoveToTarget], (id : Entity, components : any[]) =>
     {
       if (world.getComponent(id, Squadron))
         return;
@@ -156,7 +156,7 @@ export class FinishMovement implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position, MoveToTarget], (id : number, components : any[]) =>
+    world.forEachEntity([Position, MoveToTarget], (id : Entity, components : any[]) =>
     {
       let [position, target] = components as [Position, MoveToTarget];
       switch (target.order.kind)
@@ -196,7 +196,7 @@ export class FinishMovement implements System
       }
     });
 
-    world.forEachEntity([Squadron, MoveToTarget], (id : number, components : any[]) =>
+    world.forEachEntity([Squadron, MoveToTarget], (id : Entity, components : any[]) =>
     {
       let [squadron, target] = components as [Squadron, MoveToTarget];
       if (target.order.kind === "MoveTo")

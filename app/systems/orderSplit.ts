@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager, Events } from "../ui/uiManager";
@@ -14,7 +14,7 @@ import { Vec2 } from "../vec2/vec2";
 
 export class SplitOrder implements NetworkUserEvent
 {
-  constructor(public squadron : number) {}
+  constructor(public squadron : Entity) {}
 
   serialize() : any[]
   {
@@ -23,7 +23,7 @@ export class SplitOrder implements NetworkUserEvent
 
   static deserialize(data : any[]) : SplitOrder
   {
-    return new SplitOrder(data[0] as number);
+    return new SplitOrder(data[0] as Entity);
   }
 };
 
@@ -34,7 +34,7 @@ export class OrderSplit implements RenderSystem
     inputQueue.setHandler(SplitOrder, (evt : SplitOrder, now : number, world : World) =>
     {
       const squadron = evt.squadron;
-      let entities = world.findEntities([SquadronMember], (id : number, components : any[]) =>
+      let entities = world.findEntities([SquadronMember], (id : Entity, components : any[]) =>
       {
         let [squadronMember] = components as [SquadronMember];
         return squadronMember.squadron == squadron;
@@ -68,7 +68,7 @@ export class OrderSplit implements RenderSystem
   {
     if (this.orderGiven)
     {
-      let selectedSquadrons = world.findEntities([Selected, Squadron, Controlled], (id : number, components : any[]) =>
+      let selectedSquadrons = world.findEntities([Selected, Squadron, Controlled], (id : Entity, components : any[]) =>
       {
         let [, , controlled] = components as [Selected, Squadron, Controlled];
         return controlled.player.id === this.player.id;

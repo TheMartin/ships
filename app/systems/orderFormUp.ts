@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager, Events } from "../ui/uiManager";
@@ -15,7 +15,7 @@ import { Vec2 } from "../vec2/vec2";
 
 export class FormUpOrder implements NetworkUserEvent
 {
-  constructor(public entities : number[]) {}
+  constructor(public entities : Entity[]) {}
 
   serialize() : any[]
   {
@@ -24,11 +24,11 @@ export class FormUpOrder implements NetworkUserEvent
 
   static deserialize(data : any[]) : FormUpOrder
   {
-    return new FormUpOrder(data as number[]);
+    return new FormUpOrder(data as Entity[]);
   }
 };
 
-function createSquadron(flagship : number, world : World) : number
+function createSquadron(flagship : Entity, world : World) : Entity
 {
   let controlled = world.getComponent(flagship, Controlled) as Controlled;
 
@@ -89,7 +89,7 @@ export class OrderFormUp implements RenderSystem
   {
     if (this.orderGiven)
     {
-      let entities = world.findEntities([Selected, MoveToTarget, Controlled], (id : number, components : any[]) =>
+      let entities = world.findEntities([Selected, MoveToTarget, Controlled], (id : Entity, components : any[]) =>
       {
         let [, , controlled] = components as [Selected, MoveToTarget, Controlled];
         return !world.getComponent(id, Squadron) && controlled.player.id === this.player.id;

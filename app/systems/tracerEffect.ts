@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -38,7 +38,7 @@ export class RenderTracer implements RenderSystem
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Position, Velocity, TracerEffect], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Velocity, TracerEffect], (id : Entity, components : any[]) =>
     {
       let [position, velocity,] = components as [Position, Velocity, TracerEffect];
 

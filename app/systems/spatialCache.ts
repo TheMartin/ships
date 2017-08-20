@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Position, Rotation } from "../systems/spatial";
 import { Vec2, lerp } from "../vec2/vec2";
 
@@ -10,19 +10,19 @@ export class SpatialCache
     this.interval = interval;
     this.positions.clear();
     this.rotations.clear();
-    world.forEachEntity([Position], (id : number, components : any[]) =>
+    world.forEachEntity([Position], (id : Entity, components : any[]) =>
     {
       let [position] = components as [Position];
       this.positions.set(id, new Position(position.pos.clone()));
     });
-    world.forEachEntity([Rotation], (id : number, components : any[]) =>
+    world.forEachEntity([Rotation], (id : Entity, components : any[]) =>
     {
       let [rotation] = components as [Rotation];
       this.rotations.set(id, new Rotation(rotation.angle));
     });
   }
 
-  interpolatePosition(pos : Position, id : number, now : number) : Vec2
+  interpolatePosition(pos : Position, id : Entity, now : number) : Vec2
   {
     let position = pos.pos;
     let cachedPos = this.positions.get(id);
@@ -32,7 +32,7 @@ export class SpatialCache
     return position;
   }
 
-  interpolateRotation(rot : Rotation, id : number, now : number) : number
+  interpolateRotation(rot : Rotation, id : Entity, now : number) : number
   {
     let angle = rot.angle;
     let cachedRot = this.rotations.get(id);
@@ -52,8 +52,8 @@ export class SpatialCache
     return this.interval ? (now - this.last) / this.interval : 0;
   }
 
-  private positions : Map<number, Position> = new Map<number, Position>();
-  private rotations : Map<number, Rotation> = new Map<number, Rotation>();
+  private positions : Map<Entity, Position> = new Map<Entity, Position>();
+  private rotations : Map<Entity, Rotation> = new Map<Entity, Rotation>();
   private last : number = performance.now();
   private interval : number = null;
 };

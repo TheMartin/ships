@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
@@ -13,7 +13,7 @@ import { Vec2 } from "../vec2/vec2";
 
 export class MoveOrder implements NetworkUserEvent
 {
-  constructor(public entity : number, public target : Vec2) {}
+  constructor(public entity : Entity, public target : Vec2) {}
 
   serialize() : any[]
   {
@@ -53,7 +53,7 @@ export class OrderMove implements RenderSystem
   {
     for (let order of this.orderQueue)
     {
-      world.forEachEntity([Selected, MoveToTarget, Controlled], (id : number, components : any[]) =>
+      world.forEachEntity([Selected, MoveToTarget, Controlled], (id : Entity, components : any[]) =>
       {
         let [, , controlled] = components as [Selected, MoveToTarget, Controlled];
         if (controlled.player.id === this.player.id)

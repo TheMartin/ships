@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -17,7 +17,7 @@ import { Vec2, lerp } from "../vec2/vec2";
 
 export class Selectable implements NetworkComponent
 {
-  constructor(public target : number) {}
+  constructor(public target : Entity) {}
 
   equal(other : Selectable) : boolean
   {
@@ -36,7 +36,7 @@ export class Selectable implements NetworkComponent
 
   static deserialize(data : any[]) : Selectable
   {
-    return new Selectable(data[0]);
+    return new Selectable(data[0] as Entity);
   }
 };
 
@@ -66,7 +66,7 @@ function isWithin(v : Vec2, box : Box) : boolean
 
 export class SelectSingle implements UserEvent
 {
-  constructor(public entity : number) {}
+  constructor(public entity : Entity) {}
 };
 
 export class SelectBox implements UserEvent
@@ -80,7 +80,7 @@ export class Unselect implements UserEvent
 
 function unselectAll(world : World)
 {
-  world.forEachEntity([Selected], (id : number, components : any[]) => { world.removeComponent(id, Selected); });
+  world.forEachEntity([Selected], (id : Entity, components : any[]) => { world.removeComponent(id, Selected); });
 }
 
 export class SelectionSystem implements RenderSystem
@@ -111,7 +111,7 @@ export class SelectionSystem implements RenderSystem
     {
       unselectAll(world);
 
-      world.forEachEntity([Position, Selectable, Controlled], (id : number, components : any[]) =>
+      world.forEachEntity([Position, Selectable, Controlled], (id : Entity, components : any[]) =>
       {
         let [position, selectable, controlled] = components as [Position, Selectable, Controlled];
         if (controlled.player.id !== player.id)
@@ -185,7 +185,7 @@ export class DrawSelectedBox implements RenderSystem
     let selected = world.findEntities([Selected]);
     let selectedSquadrons = selected.filter(id => world.getComponent(id, Squadron) !== null);
     let selectBoxes = selected.filter(id => world.getComponent(id, Squadron) === null);
-    let selectedShips = world.findEntities([SquadronMember], (id : number, components : any[]) =>
+    let selectedShips = world.findEntities([SquadronMember], (id : Entity, components : any[]) =>
     {
       let [squadronMember] = components as [SquadronMember];
       return selectedSquadrons.find(id => id === squadronMember.squadron) !== undefined;

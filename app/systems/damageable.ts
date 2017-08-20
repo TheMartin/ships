@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { NetworkComponent } from "../network/networkComponent";
@@ -44,7 +44,7 @@ export class CheckDestroyed implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Damageable], (id : number, components : any[]) =>
+    world.forEachEntity([Damageable], (id : Entity, components : any[]) =>
     {
       let [damageable] = components as [Damageable];
       if (damageable.hitpoints < 0)

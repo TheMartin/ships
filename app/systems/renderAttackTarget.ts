@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Deferred } from "../ecs/deferred";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -16,7 +16,7 @@ export class RenderAttackTarget implements RenderSystem
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([Selected, AttackTarget], (id : number, components : any[]) =>
+    world.forEachEntity([Selected, AttackTarget], (id : Entity, components : any[]) =>
     {
       let [, attackTarget] = components as [Selected, AttackTarget];
       while (!world.containsEntity(attackTarget.target) && world.containsEntity(attackTarget.delegate))

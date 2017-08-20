@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
@@ -22,7 +22,7 @@ export class MoveProjectiles implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position, Rotation, Velocity, Projectile], (id : number, components : any[]) =>
+    world.forEachEntity([Position, Rotation, Velocity, Projectile], (id : Entity, components : any[]) =>
     {
       let [position, rotation, velocity, projectile] = components as [Position, Rotation, Velocity, Projectile];
       if (projectile.lifetime < 0)

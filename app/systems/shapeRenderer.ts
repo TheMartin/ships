@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -42,7 +42,7 @@ export class ShapeRenderer implements RenderSystem
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
   {
-    world.forEachEntity([RenderShape, Position], (id : number, components : any[]) =>
+    world.forEachEntity([RenderShape, Position], (id : Entity, components : any[]) =>
     {
       let [shape, position] = components as [RenderShape, Position];
       let rotation = world.getComponent(id, Rotation) as Rotation;

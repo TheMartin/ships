@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
@@ -14,7 +14,7 @@ import { Vec2, distance } from "../vec2/vec2";
 
 export class AttackOrder implements NetworkUserEvent
 {
-  constructor(public entity : number, public target : number) { }
+  constructor(public entity : Entity, public target : Entity) { }
 
   serialize() : any[]
   {
@@ -64,7 +64,7 @@ export class OrderAttack implements RenderSystem
         let [controlled, ] = components;
         if (controlled.player.id !== this.player.id)
         {
-          world.forEachEntity([Selected, AttackTarget, Controlled], (id : number, components : any[]) =>
+          world.forEachEntity([Selected, AttackTarget, Controlled], (id : Entity, components : any[]) =>
           {
             let [, , controlled] = components as [Selected, AttackTarget, Controlled];
             if (controlled.player.id === this.player.id)
@@ -77,5 +77,5 @@ export class OrderAttack implements RenderSystem
     this.orderQueue = [];
   }
 
-  private orderQueue : number[][] = [];
+  private orderQueue : Entity[][] = [];
 };
