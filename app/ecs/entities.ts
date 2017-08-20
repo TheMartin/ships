@@ -4,6 +4,30 @@ type ComponentClass = new (...args : any[]) => any;
 
 export type Entity = number;
 
+const ClientIdBits = 3;
+const EntityIdBits = 32 - ClientIdBits;
+const MaxClientId = 1 << ClientIdBits;
+const MaxEntityId = 1 << EntityIdBits;
+const ClientMask = (MaxClientId - 1) << EntityIdBits;
+const EntityMask = MaxEntityId - 1;
+
+export function createEntityId(clientId : number, entityId : number) : Entity
+{
+  console.assert(clientId >= 0 && clientId < MaxClientId);
+  console.assert(entityId >= 0 && entityId < MaxEntityId);
+  return (clientId << EntityIdBits) | entityId;
+}
+
+export function getClientId(id : Entity) : number
+{
+  return (id & ClientMask) >> EntityIdBits;
+}
+
+export function getEntityId(id : Entity) : number
+{
+  return id & EntityMask;
+}
+
 function delta(lhs : ComponentStorage, rhs : ComponentStorage) : ComponentStorage
 {
   let result : ComponentStorage = new Map<Entity, any>();
@@ -71,11 +95,6 @@ export class World
   {
     const makeComponentStorage = (type : ComponentClass) : [ComponentClass, ComponentStorage] => [ type, new Map<Entity, any>() ];
     this.componentData = new Map<ComponentClass, ComponentStorage>(types.map(makeComponentStorage));
-  }
-
-  static nextEntityId() : Entity
-  {
-    return World.EntityId++;
   }
 
   addEntity(id : Entity, components : any[]) : void
@@ -247,5 +266,4 @@ export class World
   }
 
   private componentData : Map<ComponentClass, ComponentStorage>;
-  private static EntityId : Entity = 0;
 };

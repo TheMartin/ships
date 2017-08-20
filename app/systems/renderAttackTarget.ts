@@ -1,6 +1,5 @@
 import { World, Entity } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
-import { Deferred } from "../ecs/deferred";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
 import { Targetable, AttackTarget } from "../systems/attackTarget";
@@ -14,7 +13,7 @@ export class RenderAttackTarget implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     world.forEachEntity([Selected, AttackTarget], (id : Entity, components : any[]) =>
     {

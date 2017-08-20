@@ -1,5 +1,4 @@
 import { World, Entity } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
@@ -153,7 +152,7 @@ export class SelectionSystem implements RenderSystem
     });
   }
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     if (this.dragStart)
     {
@@ -180,7 +179,7 @@ export class DrawSelectedBox implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     let selected = world.findEntities([Selected]);
     let selectedSquadrons = selected.filter(id => world.getComponent(id, Squadron) !== null);

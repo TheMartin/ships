@@ -1,5 +1,4 @@
 import { World, Entity } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, MouseButton, Events } from "../ui/uiManager";
@@ -29,7 +28,7 @@ export class AttackOrder implements NetworkUserEvent
 
 export class OrderAttack implements RenderSystem
 {
-  constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager, viewport : Viewport)
+  constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager)
   {
     inputQueue.setHandler(AttackOrder, (evt : AttackOrder, now : number, world : World) =>
     {
@@ -48,7 +47,7 @@ export class OrderAttack implements RenderSystem
     });
   }
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     for (let order of this.orderQueue)
     {

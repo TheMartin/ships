@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, createEntityId } from "../ecs/entities";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { RenderSystem } from "../ecs/renderSystem";
@@ -104,20 +104,24 @@ export class Game
     this.setUpScenario();
 
     Loop.timeout((now, dt) => this.update(now, dt, updateStep), updateStep);
-    Loop.render((now, dt) => this.draw(now, dt));
+    Loop.render((now, dt) => this.draw(now, dt, 0));
   }
 
   startMultiplayerHost(fps : number, netTickRate : number, server : Network.Server) : void
   {
     this.setUpHostSystems();
 
-    let host = new Host(server, this.componentMap, this.networkEventMap, this.inputQueue);
+    let host = new Host(server, this.componentMap, this.networkEventMap, this.inputQueue, (pendingInputs : UserInputQueue, remoteCount : number) =>
+    {
+      pendingInputs.flush(performance.now(), this.world, () => createEntityId(this.players[1].id, remoteCount++));
+      return remoteCount;
+    });
 
     this.setUpScenario();
 
     let updateStep = 1000 / fps;
     Loop.timeout((now, dt) => this.update(now, dt, updateStep), updateStep);
-    Loop.render((now, dt) => this.draw(now, dt));
+    Loop.render((now, dt) => this.draw(now, dt, 0));
     Loop.timeout(() => host.update(this.world), 1000 / netTickRate);
   }
 
@@ -127,15 +131,20 @@ export class Game
 
     this.setUpClientSystems();
 
-    let gameClient = new Client(client, this.componentMap, this.networkEventMap, this.inputQueue, (snapshot : World, pendingInputs : UserInputQueue) =>
+    let gameClient = new Client(client, this.componentMap, this.networkEventMap, this.inputQueue, (snapshot : World, entityCount : number, pendingInputs : UserInputQueue) =>
     {
       const now = performance.now();
       this.spatialCache.update(this.world, now, clientStep);
       this.world.replaceSnapshot(snapshot);
-      pendingInputs.flush(now, this.world);
+      for (let id = entityCount + 1; id < this.nextLocalEntityId; ++id)
+      {
+        this.world.removeEntity(createEntityId(this.players[1].id, id));
+      }
+      this.nextLocalEntityId = entityCount + 1;
+      pendingInputs.flush(now, this.world, () => createEntityId(this.players[1].id, this.nextLocalEntityId++));
     });
 
-    Loop.render((now, dt) => this.draw(now, dt));
+    Loop.render((now, dt) => this.draw(now, dt, 1));
     Loop.timeout(() => gameClient.sendEvents(), clientStep);
   }
 
@@ -147,40 +156,39 @@ export class Game
     {
       system.update(dt, this.world, deferred);
     }
-    deferred.flush(this.world);
+    deferred.flush(this.world, () => createEntityId(this.players[0].id, this.nextLocalEntityId++));
   }
 
-  draw(now : number, dt : number) : void
+  draw(now : number, dt : number, playerId : number) : void
   {
     this.ui.updateClickables(this.world, this.spatialCache, now, this.viewport);
     this.renderer.clear();
-    let deferred = new Deferred();
 
     for (let system of this.renderSystems)
     {
-      system.update(now, dt, this.world, this.inputQueue, deferred);
+      system.update(now, dt, this.world, this.inputQueue);
     }
-    deferred.flush(this.world);
-    this.inputQueue.flush(now, this.world);
+    this.inputQueue.flush(now, this.world, () => createEntityId(playerId, this.nextLocalEntityId++));
   }
 
   private setUpScenario() : void
   {
     const corner = new Vec2(50, 50);
     const dimensions = new Vec2(600, 600);
-    const names = shuffle(["Arethusa", "Aurora", "Galatea", "Penelope", "Phaeton",
+    const names = shuffle([
+      "Arethusa", "Aurora", "Galatea", "Penelope", "Phaeton",
       "Bonaventure", "Dido", "Argonaut", "Scylla", "Swiftsure",
       "Minotaur", "Bellerophon", "Vanguard", "Collosus", "Audacious",
-      "Warspite", "Valiant"]
-      );
+      "Warspite", "Valiant"
+      ]);
     for (let i = 0; i < 5; ++i)
     {
-      const id = World.nextEntityId();
+      const id = createEntityId(this.players[0].id, this.nextLocalEntityId++);
       this.world.addEntity( id, Static.makeShip(id, Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.Ship, this.players[0]) );
     }
     for (let i = 5; i < 10; ++i)
     {
-      const id = World.nextEntityId();
+      const id = createEntityId(this.players[0].id, this.nextLocalEntityId++);
       this.world.addEntity( id, Static.makeShip(id, Vec2.random().elementMultiply(dimensions).add(corner), 0, names[i], Static.NeutralShip, this.players[1]) );
     }
   }
@@ -210,7 +218,7 @@ export class Game
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
       new OrderFormUp(this.inputQueue, player, this.ui),
       new OrderSplit(this.inputQueue, player, this.ui),
-      new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
+      new OrderAttack(this.inputQueue, player, this.ui),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
       new RenderAttackTarget(this.spatialCache, this.renderer, this.viewport),
@@ -244,7 +252,7 @@ export class Game
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
       new OrderFormUp(this.inputQueue, player, this.ui),
       new OrderSplit(this.inputQueue, player, this.ui),
-      new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
+      new OrderAttack(this.inputQueue, player, this.ui),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
       new RenderAttackTarget(this.spatialCache, this.renderer, this.viewport),
@@ -266,7 +274,7 @@ export class Game
       new OrderMove(this.inputQueue, player, this.ui, this.viewport),
       new OrderFormUp(this.inputQueue, player, this.ui),
       new OrderSplit(this.inputQueue, player, this.ui),
-      new OrderAttack(this.inputQueue, player, this.ui, this.viewport),
+      new OrderAttack(this.inputQueue, player, this.ui),
       new DrawSelectedBox(this.spatialCache, this.renderer, this.viewport),
       new RenderMoveTarget(this.spatialCache, this.renderer, this.viewport),
       new RenderAttackTarget(this.spatialCache, this.renderer, this.viewport),
@@ -280,6 +288,7 @@ export class Game
   private componentMap : Map<string, Class> = makeConstructorNameMap(Game.componentTypes);
   private networkEventMap : Map<string, Class> = makeConstructorNameMap(Game.eventTypes);
   private world : World = new World(Game.componentTypes);
+  private nextLocalEntityId : number = 0;
   private spatialCache : SpatialCache = new SpatialCache();
   private updateSystems : System[] = [];
   private renderSystems : RenderSystem[] = [];

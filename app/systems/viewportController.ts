@@ -1,5 +1,4 @@
 import { World } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
@@ -35,7 +34,7 @@ export class ViewportController implements RenderSystem
     });
   }
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     const mousePos = this.ui.mousePosition();
     if (!mousePos)

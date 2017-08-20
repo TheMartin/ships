@@ -1,5 +1,4 @@
 import { World, Entity } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager, Events } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -64,7 +63,7 @@ export class OrderSplit implements RenderSystem
     });
   }
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     if (this.orderGiven)
     {

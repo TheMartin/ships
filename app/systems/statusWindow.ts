@@ -1,5 +1,4 @@
 import { World, Entity } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -120,7 +119,7 @@ export class StatusWindow implements RenderSystem
     this.$elem = createElement(this.elem) as HTMLElement;
   }
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     let elem = VdomElement.create("div", {"class" : "window"});
     world.forEachEntity([Selected], (id : Entity, components : any[]) =>

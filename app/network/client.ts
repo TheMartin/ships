@@ -1,4 +1,4 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 
 import { SpatialCache } from "../systems/spatialCache";
 
@@ -29,7 +29,7 @@ export class Client
     componentMap : Map<string, Class>,
     eventMap : Map<string, Class>,
     inputQueue : UserInputQueue,
-    processSnapshot : (snapshot : World, pendingInputs : UserInputQueue) => void
+    processSnapshot : (snapshot : World, entityCount : number, pendingInputs : UserInputQueue) => void
   )
   {
     let pendingInputs = this.preparePendingInputQueue(eventMap, inputQueue);
@@ -71,18 +71,18 @@ export class Client
     {
       let handler = inputQueue.getHandler(type);
       pendingInputs.setHandler(type, handler);
-      inputQueue.setHandler(type, (e : UserEvent, now : number, world : World) =>
+      inputQueue.setHandler(type, (e : UserEvent, now : number, world : World, entityCreator : () => Entity) =>
       {
-        handler(e, now, world);
+        handler(e, now, world, entityCreator);
         this.unsentEvents.push(e as NetworkUserEvent);
       });
     }
     return pendingInputs;
   }
 
-  private onServerUpdate(data : any, componentMap : Map<string, Class>, pendingInputs : UserInputQueue, processSnapshot : (snapshot : World, pendingInputs : UserInputQueue) => void) : void
+  private onServerUpdate(data : any, componentMap : Map<string, Class>, pendingInputs : UserInputQueue, processSnapshot : (snapshot : World, entityCount : number, pendingInputs : UserInputQueue) => void) : void
   {
-    let { ack, delta } = data;
+    let { ack, entityCount, delta } = data;
     if (ack > this.serverAckCounter)
     {
       this.snapshot.applyDelta(World.deserialize(delta, componentMap));
@@ -90,7 +90,7 @@ export class Client
         .reduceRight((rhs, lhs) => lhs.concat(rhs), this.unsentEvents)
         .forEach(e => pendingInputs.enqueue(e));
 
-      processSnapshot(this.snapshot, pendingInputs);
+      processSnapshot(this.snapshot, entityCount, pendingInputs);
       console.assert(pendingInputs.isEmpty());
 
       this.serverAckCounter = ack;

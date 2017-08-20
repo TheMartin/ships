@@ -1,20 +1,23 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
+
+type EntityCreator = () => Entity;
+type DeferredFn = (world : World, entityCreator : EntityCreator) => void;
 
 export class Deferred
 {
-  push(fn : (world : World) => void) : void
+  push(fn : DeferredFn) : void
   {
     this.queue.push(fn);
   }
 
-  flush(world : World) : void
+  flush(world : World, entityCreator : EntityCreator) : void
   {
     for (let fn of this.queue)
     {
-      fn(world);
+      fn(world, entityCreator);
     }
 
     this.queue = [];
   }
-  private queue : { (world : World) : void; }[] = [];
+  private queue : DeferredFn[] = [];
 };

@@ -53,7 +53,7 @@ export class Shooting implements System
       let targetVel = world.getComponent(targetId, Velocity) as Velocity;
 
       armed.cooldownRemaining = Math.max(armed.cooldown - delta, 0);
-      deferred.push((world : World) =>
+      deferred.push((world : World, entityCreator : () => Entity) =>
       {
         let intercept = interceptVector(targetPos.pos, targetVel ? targetVel.vel : Vec2.zero, position.pos, armed.projectileSpeed);
         let initialVelocity = intercept ? intercept : toTarget.normalized().multiply(armed.projectileSpeed);
@@ -66,7 +66,7 @@ export class Shooting implements System
           new Projectile(targetId, armed.range, armed.projectileSpeed, armed.damage)
         ];
 
-        world.addEntity(World.nextEntityId(), projectile);
+        world.addEntity(entityCreator(), projectile);
       });
     });
   }

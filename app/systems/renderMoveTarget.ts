@@ -1,5 +1,4 @@
 import { World, Entity } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
@@ -14,7 +13,7 @@ export class RenderMoveTarget implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     world.forEachEntity([Selected, MoveToTarget], (id : Entity, components : any[]) =>
     {

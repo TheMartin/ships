@@ -1,10 +1,12 @@
-import { World } from "../ecs/entities";
+import { World, Entity } from "../ecs/entities";
 
 export interface UserEvent
 {
 };
 
-export type UserEventHandler = (e : UserEvent, now : number, world : World) => void;
+type EntityCreator = () => Entity;
+
+export type UserEventHandler = (e : UserEvent, now : number, world : World, entityCreator : EntityCreator) => void;
 
 type EventClass = new (...args : any[]) => any;
 
@@ -25,12 +27,12 @@ export class UserInputQueue
     this.handlers.set(type.name, handler);
   }
 
-  flush(now : number, world : World) : void
+  flush(now : number, world : World, entityCreator : EntityCreator) : void
   {
     for (let e of this.queue)
     {
       if (this.handlers.has(e.constructor.name))
-        this.handlers.get(e.constructor.name)(e, now, world);
+        this.handlers.get(e.constructor.name)(e, now, world, entityCreator);
     }
 
     this.queue = [];

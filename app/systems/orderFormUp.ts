@@ -1,5 +1,4 @@
-import { World, Entity } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
+import { World, Entity, getClientId, getEntityId } from "../ecs/entities";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager, Events } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -28,14 +27,13 @@ export class FormUpOrder implements NetworkUserEvent
   }
 };
 
-function createSquadron(flagship : Entity, world : World) : Entity
+function createSquadron(flagship : Entity, world : World, squadronId : Entity) : void
 {
   let controlled = world.getComponent(flagship, Controlled) as Controlled;
 
-  const squadronId = World.nextEntityId();
   world.addEntity(squadronId, [
     new Squadron(flagship),
-    new Named("Squadron " + squadronId),
+    new Named("Squadron " + getClientId(squadronId) + "-" + getEntityId(squadronId)),
     new MoveToTarget(),
     new AttackTarget(),
     new Controlled(controlled.player)
@@ -49,15 +47,16 @@ function createSquadron(flagship : Entity, world : World) : Entity
   (world.getComponent(flagship, Selectable) as Selectable).target = squadronId;
   world.addComponent(flagship, new SquadronMember(squadronId, null));
   (world.getComponent(flagship, AttackTarget) as AttackTarget).delegate = squadronId;
-  return squadronId;
 }
 
 export class OrderFormUp implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private player : Player, ui : UiManager)
   {
-    inputQueue.setHandler(FormUpOrder, (evt : FormUpOrder, now : number, world : World) =>
+    inputQueue.setHandler(FormUpOrder, (evt : FormUpOrder, now : number, world : World, entityCreator : () => Entity) =>
     {
+      let squadronId = entityCreator();
+
       let entities = evt.entities.filter(e =>
       {
         let moveToTarget = world.getComponent(e, MoveToTarget) as MoveToTarget;
@@ -67,11 +66,11 @@ export class OrderFormUp implements RenderSystem
 
       if (entities.length > 0)
       {
-        let squadron = createSquadron(entities[0], world);
+        createSquadron(entities[0], world, squadronId);
         for (let i = 1; i < entities.length; ++i)
         {
           let target = world.getComponent(entities[i], MoveToTarget) as MoveToTarget;
-          target.order = new Join(squadron);
+          target.order = new Join(squadronId);
         }
       }
     });
@@ -85,7 +84,7 @@ export class OrderFormUp implements RenderSystem
     });
   }
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     if (this.orderGiven)
     {

@@ -1,5 +1,4 @@
 import { World, Entity } from "../ecs/entities";
-import { Deferred } from "../ecs/deferred";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -40,7 +39,7 @@ export class ShapeRenderer implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private renderer : Renderer, private viewport : Viewport) {}
 
-  update(now : number, dt : number, world : World, inputQueue : UserInputQueue, deferred : Deferred) : void
+  update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     world.forEachEntity([RenderShape, Position], (id : Entity, components : any[]) =>
     {
