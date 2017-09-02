@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
@@ -9,9 +10,17 @@ import { Projectile } from "../systems/projectile";
 import { Vec2, norm } from "../vec2/vec2";
 import { interceptVector } from "../util/intercept";
 
-export class Armed
+export class Armed implements Component
 {
   constructor(public cooldown : number, public range : number, public projectileSpeed : number, public damage : number) {}
+
+  clone() : Armed
+  {
+    let result = new Armed(this.cooldown, this.range, this.projectileSpeed, this.damage);
+    result.cooldownRemaining = this.cooldownRemaining;
+    return result;
+  }
+
   public cooldownRemaining : number = 0;
 };
 
@@ -19,7 +28,7 @@ export class Shooting implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position, AttackTarget, Armed], (id : Entity, components : any[]) =>
+    world.forEachEntity([Position, AttackTarget, Armed], (id : Entity, components : Component[]) =>
     {
       let [position, target, armed] = components as [Position, AttackTarget, Armed];
       armed.cooldownRemaining = armed.cooldownRemaining - dt;

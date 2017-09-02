@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, MouseButton, Events } from "../ui/uiManager";
@@ -63,7 +64,7 @@ export class OrderAttack implements RenderSystem
         let [controlled, ] = components;
         if (controlled.player.id !== this.player.id)
         {
-          world.forEachEntity([Selected, AttackTarget, Controlled], (id : Entity, components : any[]) =>
+          world.forEachEntity([Selected, AttackTarget, Controlled], (id : Entity, components : Component[]) =>
           {
             let [, , controlled] = components as [Selected, AttackTarget, Controlled];
             if (controlled.player.id === this.player.id)

@@ -29,7 +29,7 @@ import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { RenderShape } from "../systems/shapeRenderer";
 import { MoveToTarget } from "../systems/moveTo";
-import { Selected, Selectable } from "../systems/selection";
+import { Selected, Selectable, SelectionChange } from "../systems/selection";
 import { Named } from "../systems/named";
 import { Controlled } from "../systems/playable";
 import { AttackTarget, Targetable } from "../systems/attackTarget";
@@ -87,7 +87,8 @@ export class Game
     AttackOrder,
     MoveOrder,
     FormUpOrder,
-    SplitOrder
+    SplitOrder,
+    SelectionChange
   ];
 
   constructor(private ui : UiManager, private renderer : Renderer)
@@ -131,21 +132,21 @@ export class Game
 
     this.setUpClientSystems();
 
-    let gameClient = new Client(client, this.componentMap, this.networkEventMap, this.inputQueue, (snapshot : World, entityCount : number, pendingInputs : UserInputQueue) =>
+    let gameClient = new Client(client, this.componentMap, this.eventMap, this.inputQueue, (snapshot : World, entityCount : number, pendingInputs : UserInputQueue) =>
     {
       const now = performance.now();
       this.spatialCache.update(this.world, now, clientStep);
       this.world.replaceSnapshot(snapshot);
-      for (let id = entityCount + 1; id < this.nextLocalEntityId; ++id)
+      for (let id = entityCount; id < this.nextLocalEntityId; ++id)
       {
         this.world.removeEntity(createEntityId(this.players[1].id, id));
       }
-      this.nextLocalEntityId = entityCount + 1;
+      this.nextLocalEntityId = entityCount;
       pendingInputs.flush(now, this.world, () => createEntityId(this.players[1].id, this.nextLocalEntityId++));
     });
 
     Loop.render((now, dt) => this.draw(now, dt, 1));
-    Loop.timeout(() => gameClient.sendEvents(), clientStep);
+    Loop.timeout(() => gameClient.sendEvents(this.world), clientStep);
   }
 
   update(now : number, dt : number, step : number) : void
@@ -286,7 +287,8 @@ export class Game
   }
 
   private componentMap : Map<string, Class> = makeConstructorNameMap(Game.componentTypes);
-  private networkEventMap : Map<string, Class> = makeConstructorNameMap(Game.eventTypes);
+  private eventMap : Map<string, Class> = makeConstructorNameMap(Game.eventTypes);
+  private networkEventMap : Map<string, Class> = makeConstructorNameMap(Game.eventTypes.filter(item => (item as any).deserialize !== undefined));
   private world : World = new World(Game.componentTypes);
   private nextLocalEntityId : number = 0;
   private spatialCache : SpatialCache = new SpatialCache();

@@ -1,7 +1,8 @@
-export interface NetworkComponent
+import { Component } from "../ecs/component";
+
+export interface NetworkComponent extends Component
 {
-  equal(other : NetworkComponent) : boolean;
-  clone() : NetworkComponent;
+  equal(other : Component) : boolean;
   serialize() : any[];
 };
 

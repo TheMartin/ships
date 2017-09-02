@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, Viewport } from "../renderer/renderer";
@@ -41,7 +42,7 @@ export class ShapeRenderer implements RenderSystem
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
-    world.forEachEntity([RenderShape, Position], (id : Entity, components : any[]) =>
+    world.forEachEntity([RenderShape, Position], (id : Entity, components : Component[]) =>
     {
       let [shape, position] = components as [RenderShape, Position];
       let rotation = world.getComponent(id, Rotation) as Rotation;

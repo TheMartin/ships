@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { NetworkComponent } from "../network/networkComponent";
@@ -64,13 +65,13 @@ export class CheckSquadronIntegrity implements System
 {
   update(dt : number, world : World, deferred : Deferred)
   {
-    world.forEachEntity([Squadron], (id : Entity, components : any[]) =>
+    world.forEachEntity([Squadron], (id : Entity, components : Component[]) =>
     {
       let [squadron] = components as [Squadron];
       let squadronId = id;
       if (!world.containsEntity(squadron.flagship))
       {
-        let members = world.findEntities([SquadronMember], (id : Entity, components : any[]) =>
+        let members = world.findEntities([SquadronMember], (id : Entity, components : Component[]) =>
         {
           let [member] = components as [SquadronMember];
           return member.squadron == squadronId;
@@ -104,7 +105,7 @@ export class SquadronMovement implements System
 
   update(dt : number, world : World, deferred : Deferred)
   {
-    world.forEachEntity([Position, Rotation, Velocity, AngularVelocity, SquadronMember], (id : Entity, components : any[]) =>
+    world.forEachEntity([Position, Rotation, Velocity, AngularVelocity, SquadronMember], (id : Entity, components : Component[]) =>
     {
       let [position, rotation, velocity, angularVelocity, squadronMember] = components as [Position, Rotation, Velocity, AngularVelocity, SquadronMember];
       let [squadron, squadronTarget] = world.getComponents(squadronMember.squadron, [Squadron, MoveToTarget]) as [Squadron, MoveToTarget];

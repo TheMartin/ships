@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { MoveToTarget, MoveTo } from "../systems/moveTo";
@@ -14,7 +15,7 @@ export class ChooseRandomMoveTarget implements System
 
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([MoveToTarget, Controlled], (id : Entity, components : any[]) =>
+    world.forEachEntity([MoveToTarget, Controlled], (id : Entity, components : Component[]) =>
     {
       let [target, controlled] = components as [MoveToTarget, Controlled];
       if (controlled.player.id === this.player.id && target.order.kind === "Stop")

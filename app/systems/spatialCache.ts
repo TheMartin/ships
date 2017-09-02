@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { Position, Rotation } from "../systems/spatial";
 import { Vec2, lerp } from "../vec2/vec2";
 
@@ -10,12 +11,12 @@ export class SpatialCache
     this.interval = interval;
     this.positions.clear();
     this.rotations.clear();
-    world.forEachEntity([Position], (id : Entity, components : any[]) =>
+    world.forEachEntity([Position], (id : Entity, components : Component[]) =>
     {
       let [position] = components as [Position];
       this.positions.set(id, new Position(position.pos.clone()));
     });
-    world.forEachEntity([Rotation], (id : Entity, components : any[]) =>
+    world.forEachEntity([Rotation], (id : Entity, components : Component[]) =>
     {
       let [rotation] = components as [Rotation];
       this.rotations.set(id, new Rotation(rotation.angle));

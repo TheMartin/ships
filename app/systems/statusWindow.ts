@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -91,7 +92,7 @@ function renderSquadron(id : Entity, world : World, spatialCache : SpatialCache,
   let [name, squadron, moveTarget, attackTarget] = world.getOptionalComponents(id, [Named, Squadron, MoveToTarget, AttackTarget]) as [Named, Squadron, MoveToTarget, AttackTarget];
   const squadronId = id;
   const flagship = squadron.flagship;
-  const squadronMembers = world.findEntities([SquadronMember], (id : Entity, components : any[]) =>
+  const squadronMembers = world.findEntities([SquadronMember], (id : Entity, components : Component[]) =>
   {
     let [member] = components as [SquadronMember];
     return member.squadron === squadronId;
@@ -122,7 +123,7 @@ export class StatusWindow implements RenderSystem
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
     let elem = VdomElement.create("div", {"class" : "window"});
-    world.forEachEntity([Selected], (id : Entity, components : any[]) =>
+    world.forEachEntity([Selected], (id : Entity, components : Component[]) =>
     {
       elem.children.push(
         world.getComponent(id, Squadron)

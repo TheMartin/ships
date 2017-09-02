@@ -1,4 +1,5 @@
 import { World, Entity, getClientId, getEntityId } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager, Events } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -88,7 +89,7 @@ export class OrderFormUp implements RenderSystem
   {
     if (this.orderGiven)
     {
-      let entities = world.findEntities([Selected, MoveToTarget, Controlled], (id : Entity, components : any[]) =>
+      let entities = world.findEntities([Selected, MoveToTarget, Controlled], (id : Entity, components : Component[]) =>
       {
         let [, , controlled] = components as [Selected, MoveToTarget, Controlled];
         return !world.getComponent(id, Squadron) && controlled.player.id === this.player.id;

@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
@@ -52,7 +53,7 @@ export class OrderMove implements RenderSystem
   {
     for (let order of this.orderQueue)
     {
-      world.forEachEntity([Selected, MoveToTarget, Controlled], (id : Entity, components : any[]) =>
+      world.forEachEntity([Selected, MoveToTarget, Controlled], (id : Entity, components : Component[]) =>
       {
         let [, , controlled] = components as [Selected, MoveToTarget, Controlled];
         if (controlled.player.id === this.player.id)

@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
@@ -15,7 +16,7 @@ export class RenderHealthBar implements RenderSystem
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
-    world.forEachEntity([Position, Damageable], (id : Entity, components : any[]) =>
+    world.forEachEntity([Position, Damageable], (id : Entity, components : Component[]) =>
     {
       let [position, damageable] = components as [Position, Damageable];
       let selected = world.getComponent(id, Selected) as Selected;

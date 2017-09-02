@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { Viewport } from "../renderer/renderer";
 import { SpatialCache } from "../systems/spatialCache";
 import { Position } from "../systems/spatial";
@@ -196,7 +197,7 @@ export class UiManager
   updateClickables(world : World, spatialCache : SpatialCache, now : number, viewport : Viewport) : void
   {
     this.clickables.clear();
-    world.forEachEntity([Position], (id : Entity, components : any[]) =>
+    world.forEachEntity([Position], (id : Entity, components : Component[]) =>
     {
       let [position] = components as [Position];
       if (world.getComponent(id, Selectable) || world.getComponent(id, Targetable))

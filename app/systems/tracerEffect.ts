@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UserInputQueue } from "../ui/userInputQueue";
 import { Renderer, RenderProps, Viewport } from "../renderer/renderer";
@@ -37,7 +38,7 @@ export class RenderTracer implements RenderSystem
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
-    world.forEachEntity([Position, Velocity, TracerEffect], (id : Entity, components : any[]) =>
+    world.forEachEntity([Position, Velocity, TracerEffect], (id : Entity, components : Component[]) =>
     {
       let [position, velocity,] = components as [Position, Velocity, TracerEffect];
 

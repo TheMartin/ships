@@ -1,4 +1,5 @@
 import { Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { RenderShape } from "../systems/shapeRenderer";
@@ -44,7 +45,7 @@ export class Static
     Static.shipVertices
   );
 
-  static makeShip(id : Entity, pos : Vec2, rot : number, name : string, shape : Shape, player : Player)
+  static makeShip(id : Entity, pos : Vec2, rot : number, name : string, shape : Shape, player : Player) : Component[]
   {
     return [
       new Position(pos),

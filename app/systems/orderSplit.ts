@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { UiManager, Events } from "../ui/uiManager";
 import { UserInputQueue } from "../ui/userInputQueue";
@@ -33,7 +34,7 @@ export class OrderSplit implements RenderSystem
     inputQueue.setHandler(SplitOrder, (evt : SplitOrder, now : number, world : World) =>
     {
       const squadron = evt.squadron;
-      let entities = world.findEntities([SquadronMember], (id : Entity, components : any[]) =>
+      let entities = world.findEntities([SquadronMember], (id : Entity, components : Component[]) =>
       {
         let [squadronMember] = components as [SquadronMember];
         return squadronMember.squadron == squadron;
@@ -67,7 +68,7 @@ export class OrderSplit implements RenderSystem
   {
     if (this.orderGiven)
     {
-      let selectedSquadrons = world.findEntities([Selected, Squadron, Controlled], (id : Entity, components : any[]) =>
+      let selectedSquadrons = world.findEntities([Selected, Squadron, Controlled], (id : Entity, components : Component[]) =>
       {
         let [, , controlled] = components as [Selected, Squadron, Controlled];
         return controlled.player.id === this.player.id;

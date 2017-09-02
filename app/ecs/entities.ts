@@ -1,6 +1,9 @@
-type ComponentStorage = Map<Entity, any>;
+import { Component } from "../ecs/component";
+import { NetworkComponent } from "../network/networkComponent";
 
-type ComponentClass = new (...args : any[]) => any;
+type ComponentStorage = Map<Entity, Component>;
+
+type ComponentClass = new (...args : any[]) => Component;
 
 export type Entity = number;
 
@@ -30,11 +33,11 @@ export function getEntityId(id : Entity) : number
 
 function delta(lhs : ComponentStorage, rhs : ComponentStorage) : ComponentStorage
 {
-  let result : ComponentStorage = new Map<Entity, any>();
+  let result : ComponentStorage = new Map<Entity, Component>();
   for (let [id, newComponent] of rhs.entries())
   {
     let oldComponent = lhs.get(id);
-    if (!oldComponent || !oldComponent.equal(newComponent))
+    if (!oldComponent || !(oldComponent as NetworkComponent).equal(newComponent))
     {
       result.set(id, newComponent);
     }
@@ -66,7 +69,7 @@ function applyDelta(components : ComponentStorage, delta : ComponentStorage) : v
 
 function clone(components : ComponentStorage) : ComponentStorage
 {
-  let clone : ComponentStorage = new Map<Entity, any>();
+  let clone : ComponentStorage = new Map<Entity, Component>();
   for (let [id, component] of components.entries())
   {
     clone.set(id, component.clone());
@@ -79,28 +82,28 @@ function serialize(components : ComponentStorage) : any[]
   let result : any[] = [];
   for (let [id, component] of components.entries())
   {
-    result.push([id, component !== null ? component.serialize() : null]);
+    result.push([id, component !== null ? (component as NetworkComponent).serialize() : null]);
   }
   return result;
 };
 
-function deserialize(data : any[], deserializer : (data : any[]) => any) : ComponentStorage
+function deserialize(data : any[], deserializer : (data : any[]) => Component) : ComponentStorage
 {
-  return new Map<Entity, any>( data.map((item) : [number, any[]] => [ (<any[]>item)[0] as Entity, (<any[]>item)[1] !== null ? deserializer( (<any[]>item)[1] as any[] ) : null]) );
+  return new Map<Entity, Component>( data.map((item : any[]) : [Entity, Component] => [ (<any[]>item)[0] as Entity, (<any[]>item)[1] !== null ? deserializer( (<any[]>item)[1] as any[] ) : null]) );
 };
 
 export class World
 {
   constructor(types : ComponentClass[])
   {
-    const makeComponentStorage = (type : ComponentClass) : [ComponentClass, ComponentStorage] => [ type, new Map<Entity, any>() ];
+    const makeComponentStorage = (type : ComponentClass) : [ComponentClass, ComponentStorage] => [ type, new Map<Entity, Component>() ];
     this.componentData = new Map<ComponentClass, ComponentStorage>(types.map(makeComponentStorage));
   }
 
-  addEntity(id : Entity, components : any[]) : void
+  addEntity(id : Entity, components : Component[]) : void
   {
     for (let component of components)
-      this.componentData.get(component.constructor).set(id, component);
+      this.componentData.get((component as any).constructor).set(id, component);
   }
 
   removeEntity(id : Entity) : void
@@ -120,9 +123,9 @@ export class World
     return false;
   }
 
-  addComponent(id : Entity, component : any) : void
+  addComponent(id : Entity, component : Component) : void
   {
-    this.componentData.get(component.constructor).set(id, component);
+    this.componentData.get((component as any).constructor).set(id, component);
   }
 
   removeComponent(id : Entity, type : ComponentClass) : void
@@ -130,14 +133,14 @@ export class World
     this.componentData.get(type).delete(id);
   }
 
-  getComponent(id : Entity, type : ComponentClass) : any
+  getComponent(id : Entity, type : ComponentClass) : Component
   {
     let data = this.componentData.get(type);
     let component = data ? data.get(id) : null;
     return component ? component : null;
   }
 
-  forEachEntity(types : ComponentClass[], callback : (id : Entity, components : any[]) => void) : void
+  forEachEntity(types : ComponentClass[], callback : (id : Entity, components : Component[]) => void) : void
   {
     for (let id of this.findSmallestComponentFromTypes(types).keys())
     {
@@ -147,7 +150,7 @@ export class World
     }
   }
 
-  findEntities(types : ComponentClass[], filter : (id : Entity, components : any[]) => boolean = () => true) : Entity[]
+  findEntities(types : ComponentClass[], filter : (id : Entity, components : Component[]) => boolean = () => true) : Entity[]
   {
     let entities : Entity[] = [];
     for (let id of this.findSmallestComponentFromTypes(types).keys())
@@ -159,9 +162,9 @@ export class World
     return entities;
   }
 
-  getComponents(id : Entity, types : ComponentClass[]) : any[]
+  getComponents(id : Entity, types : ComponentClass[]) : Component[]
   {
-    let components : ComponentClass[] = [];
+    let components : Component[] = [];
     for (let type of types)
     {
       let component = this.componentData.get(type).get(id);
@@ -173,7 +176,7 @@ export class World
     return components;
   };
 
-  getOptionalComponents(id : Entity, types : ComponentClass[]) : any[]
+  getOptionalComponents(id : Entity, types : ComponentClass[]) : Component[]
   {
     return types.map(type => this.getComponent(id, type));
   }
@@ -216,8 +219,8 @@ export class World
 
   applyDelta(delta : World) : void
   {
-    const types = Array.from(this.componentData.keys());
-    console.assert(types.filter(type => !delta.componentData.has(type)).length === 0, "Component type mismatch in applying delta", types);
+    const types = Array.from(delta.componentData.keys());
+    console.assert(types.filter(type => !this.componentData.has(type)).length === 0, "Component type mismatch in applying delta", types);
     for (let type of types)
     {
       applyDelta(this.componentData.get(type), delta.componentData.get(type));

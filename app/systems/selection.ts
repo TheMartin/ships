@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { RenderSystem } from "../ecs/renderSystem";
 import { Renderer, Viewport } from "../renderer/renderer";
 import { UiManager, Events, MouseButton } from "../ui/uiManager";
@@ -39,8 +40,9 @@ export class Selectable implements NetworkComponent
   }
 };
 
-export class Selected
+export class Selected implements Component
 {
+  clone() : Selected { return new Selected(); }
 };
 
 class Box
@@ -63,64 +65,34 @@ function isWithin(v : Vec2, box : Box) : boolean
     && v.y <= box.max.y;
 };
 
-export class SelectSingle implements UserEvent
+export class SelectionChange implements UserEvent
 {
-  constructor(public entity : Entity) {}
+  constructor(public entities : Entity[]) {}
 };
-
-export class SelectBox implements UserEvent
-{
-  constructor(public box : Box) {}
-};
-
-export class Unselect implements UserEvent
-{
-};
-
-function unselectAll(world : World)
-{
-  world.forEachEntity([Selected], (id : Entity, components : any[]) => { world.removeComponent(id, Selected); });
-}
 
 export class SelectionSystem implements RenderSystem
 {
   constructor(inputQueue : UserInputQueue, private spatialCache : SpatialCache, player : Player, private ui : UiManager, private renderer : Renderer, private viewport : Viewport)
   {
-    inputQueue.setHandler(SelectSingle, (evt : SelectSingle, now : number, world : World) =>
+    inputQueue.setHandler(SelectionChange, (evt : SelectionChange, now : number, world : World) =>
     {
-      unselectAll(world);
-
-      let components = world.getComponents(evt.entity, [Selectable, Controlled]);
-      if (!components)
-        return;
-
-      let [selectable, controlled] = components as [Selectable, Controlled];
-      if (controlled.player.id === player.id)
+      world.forEachEntity([Selected], (id : Entity, components : Component[]) =>
       {
-        world.addComponent(selectable.target, new Selected());
-      }
-    });
+        world.removeComponent(id, Selected);
+      });
 
-    inputQueue.setHandler(Unselect, (evt : Unselect, now : number, world : World) =>
-    {
-      unselectAll(world);
-    });
-
-    inputQueue.setHandler(SelectBox, (evt : SelectBox, now : number, world : World) =>
-    {
-      unselectAll(world);
-
-      world.forEachEntity([Position, Selectable, Controlled], (id : Entity, components : any[]) =>
+      for (let entity of evt.entities)
       {
-        let [position, selectable, controlled] = components as [Position, Selectable, Controlled];
-        if (controlled.player.id !== player.id)
+        let components = world.getComponents(entity, [Selectable, Controlled]);
+        if (!components)
           return;
 
-        if (isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, id, now)), evt.box))
+        let [selectable, controlled] = components as [Selectable, Controlled];
+        if (controlled.player.id === player.id)
         {
           world.addComponent(selectable.target, new Selected());
         }
-      });
+      }
     });
 
     ui.addEventListener("dragstart", (e : Events.MouseDragStart) =>
@@ -133,7 +105,7 @@ export class SelectionSystem implements RenderSystem
     {
       if (e.button === MouseButton.Left)
       {
-        inputQueue.enqueue(new SelectBox(new Box(this.viewport.transform(this.dragStart), this.dragCurrent)));
+        this.box = new Box(this.viewport.transform(this.dragStart), this.dragCurrent);
         this.dragStart = null;
         this.dragCurrent = null;
       }
@@ -142,13 +114,13 @@ export class SelectionSystem implements RenderSystem
     ui.addEventListener("click", (e : Events.MouseClick) =>
     {
       if (e.button === MouseButton.Left)
-        inputQueue.enqueue(new Unselect());
+        inputQueue.enqueue(new SelectionChange([]));
     });
 
     ui.addEventListener("entityclick", (e : Events.EntityClick) =>
     {
       if (e.button === MouseButton.Left)
-        inputQueue.enqueue(new SelectSingle(e.entities[0]));
+        inputQueue.enqueue(new SelectionChange([e.entities[0]]));
     });
   }
 
@@ -163,10 +135,22 @@ export class SelectionSystem implements RenderSystem
       if (this.dragCurrent)
         this.renderer.drawRect(this.viewport.transform(this.dragStart), this.dragCurrent, SelectionSystem.props);
     }
+
+    if (this.box)
+    {
+      let entities = world.findEntities([Position, Selectable, Controlled], (id : Entity, components : Component[]) =>
+      {
+        let [position, ,] = components as [Position, Selectable, Controlled];
+        return isWithin(this.viewport.transform(this.spatialCache.interpolatePosition(position, id, now)), this.box);
+      });
+      inputQueue.enqueue(new SelectionChange(entities));
+      this.box = null;
+    }
   }
 
   private dragStart : Vec2;
   private dragCurrent : Vec2;
+  private box : Box = null;
   private static readonly props : RenderProps =
     {
       stroke : "rgb(0, 255, 0)",
@@ -190,7 +174,7 @@ export class DrawSelectedBox implements RenderSystem
       return selectedSquadrons.find(id => id === squadronMember.squadron) !== undefined;
     });
     let boxPositions = selectBoxes.concat(selectedShips)
-      .map(id => [id, world.getComponent(id, Position)])
+      .map((id) : [number, Position] => [id, world.getComponent(id, Position) as Position])
       .filter(([id, position]) => position !== null)
       .map(([id, position]) => this.spatialCache.interpolatePosition(position, id, now));
 

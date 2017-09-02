@@ -1,4 +1,5 @@
 import { World, Entity } from "../ecs/entities";
+import { Component } from "../ecs/component";
 import { Deferred } from "../ecs/deferred";
 import { System } from "../ecs/system";
 import { Position, Rotation } from "../systems/spatial";
@@ -9,12 +10,18 @@ import { Vec2, distance } from "../vec2/vec2";
 import { angleDiff } from "../util/angle";
 import { interceptVector } from "../util/intercept";
 
-export class Projectile
+export class Projectile implements Component
 {
   constructor(public target : number, range : number, public speed : number, public damage : number)
   {
     this.lifetime = range / speed;
   }
+
+  clone() : Projectile
+  {
+    return new Projectile(this.target, this.lifetime * this.speed, this.speed, this.damage);
+  }
+
   public lifetime : number = 0;
 };
 
@@ -22,7 +29,7 @@ export class MoveProjectiles implements System
 {
   update(dt : number, world : World, deferred : Deferred) : void
   {
-    world.forEachEntity([Position, Rotation, Velocity, Projectile], (id : Entity, components : any[]) =>
+    world.forEachEntity([Position, Rotation, Velocity, Projectile], (id : Entity, components : Component[]) =>
     {
       let [position, rotation, velocity, projectile] = components as [Position, Rotation, Velocity, Projectile];
       if (projectile.lifetime < 0)
