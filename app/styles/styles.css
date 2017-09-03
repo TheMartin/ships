@@ -8,6 +8,40 @@ body {
 .window {
   position: absolute;
   display: inline-block;
+}
+
+.debug {
+  left : 5%;
+  top : 5%;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+}
+
+.debugTable {
+  font-family: sans-serif;
+  font-size: 12px;
+  color : rgb(255, 255, 255);
+}
+
+table th {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+table td {
+  background-color: rgba(255, 255, 255, 0.3);
+  border : 1px solid rgba(0, 0, 0, 0);
+}
+
+td.present {
+  background-color: rgba(0, 255, 0, 0.3);
+}
+
+td.not-present {
+  background-color: rgba(255, 0, 0, 0.3);
+}
+
+.status {
   left: 60%;
   bottom: 15%;
   width: 450px;

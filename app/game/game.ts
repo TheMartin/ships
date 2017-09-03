@@ -25,6 +25,8 @@ import { CheckDestroyed } from "../systems/damageable";
 import { RenderTracer } from "../systems/tracerEffect";
 import { RenderHealthBar } from "../systems/renderHealthBar";
 
+import { DebugWindow } from "../systems/debugWindow";
+
 import { Position, Rotation } from "../systems/spatial";
 import { Velocity, AngularVelocity } from "../systems/kinematic";
 import { RenderShape } from "../systems/shapeRenderer";

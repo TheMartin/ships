@@ -140,6 +140,13 @@ export class World
     return component ? component : null;
   }
 
+  getAllEntities() : Entity[]
+  {
+    let entities = new Set<Entity>();
+    this.componentData.forEach(storage => storage.forEach((_, id) => entities.add(id)));
+    return Array.from(entities.values());
+  }
+
   forEachEntity(types : ComponentClass[], callback : (id : Entity, components : Component[]) => void) : void
   {
     for (let id of this.findSmallestComponentFromTypes(types).keys())

@@ -116,13 +116,13 @@ export class StatusWindow implements RenderSystem
 {
   constructor(private spatialCache : SpatialCache, private ui : UiManager)
   {
-    this.elem = VdomElement.create("div", {"class" : "window"});
+    this.elem = VdomElement.create("div", {"class" : "window status"});
     this.$elem = createElement(this.elem) as HTMLElement;
   }
 
   update(now : number, dt : number, world : World, inputQueue : UserInputQueue) : void
   {
-    let elem = VdomElement.create("div", {"class" : "window"});
+    let elem = VdomElement.create("div", {"class" : "window status"});
     world.forEachEntity([Selected], (id : Entity, components : Component[]) =>
     {
       elem.children.push(
